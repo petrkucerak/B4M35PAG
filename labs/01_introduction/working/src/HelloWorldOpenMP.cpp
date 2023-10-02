@@ -5,22 +5,19 @@
 using namespace std;
 
 int main() {
-    vector<int> values = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    #pragma omp parallel
+    {
+        #pragma omp single
+        {
+            cout << "Number of available threads "<< omp_get_num_threads() << endl;
+        }
 
-    #pragma omp parallel for
-    for (int i = 0; i < values.size(); i++) {
-        values[i] *= 10;
+        #pragma omp critical
+        {
+            cout << "This is thread " << omp_get_thread_num() << " speaking" << endl;
+        }
     }
-
-    int x = 0;
-
-    #pragma omp parallel for reduction(+:x)
-    for (int i = 0; i < values.size(); i++) {
-        x += values[i];
-    }
-
-    // Has to be 550.
-    cout << "Value of x: " << x << endl;
-
+    cout << "Parallel block finished" << endl;
+    
     return 0;
 }
