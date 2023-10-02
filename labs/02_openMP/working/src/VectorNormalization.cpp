@@ -82,13 +82,37 @@ vector<double> normalizationParallelSections(vector<double> u)
 
 vector<double> normalizationParallelForAndCritical(vector<double> u)
 {
-   // TODO: work on vector u inplace
+   double vector_sum = 0;
+#pragma omp parallel
+   {
+#pragma omp for
+      for (uint64_t i = 0; i < u.size(); ++i) {
+#pragma omp critical
+         {
+            vector_sum += u[i] * u[i];
+         }
+      }
+      double vector_size = pow(vector_sum, 0.5);
+#pragma omp for
+      for (uint64_t i = 0; i < u.size(); ++i) {
+         u[i] = u[i] / vector_size;
+      }
+   }
    return u;
 }
 
 vector<double> normalizationParallelForAndReduction(vector<double> u)
 {
-   // TODO: work on vector u inplace
+   double vector_sum = 0;
+#pragma omp parallel for reduction(+ : vector_sum)
+   for (uint64_t i = 0; i < u.size(); ++i) {
+      vector_sum += u[i] * u[i];
+   }
+   double vector_size = pow(vector_sum, 0.5);
+#pragma omp parallel for
+   for (uint64_t i = 0; i < u.size(); ++i) {
+      u[i] = u[i] / vector_size;
+   }
    return u;
 }
 
