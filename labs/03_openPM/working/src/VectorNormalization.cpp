@@ -108,12 +108,33 @@ void normalizationParallelForAndReduction(vector<double> &u) {
 // Use 'parallel for' for parallelization of sum of squares and element normalization. Use OpenMP 'atomic' directive
 // when computing the sum of squares.
 void normalizationParallelForAndAtomic(vector<double> &u) {
-    // TODO:
+    double sumSquares = 0;
+    #pragma omp parallel for
+    for (int i = 0; i < u.size(); i++) {
+        #pragma omp atomic update
+        sumSquares += u[i] * u[i];
+    }
+
+    double vectorLength = sqrt(sumSquares);
+    #pragma omp parallel for
+    for (int i = 0; i < u.size(); i++) {
+        u[i] /= vectorLength;
+    }
 }
 
 // Use vectorization with 'simd' directive. You can also experiment with 'parallel for' and 'reduction'.
 void normalizationParallelSimd(vector<double> &u) {
-    // TODO:
+    double sumSquares = 0;
+    #pragma omp parralel simd for reduction(+:sumSquares)
+    for (int i = 0; i < u.size(); i++) {
+        sumSquares += u[i] * u[i];
+    }
+
+    double vectorLength = sqrt(sumSquares);
+    #pragma omp parallel for
+    for (int i = 0; i < u.size(); i++) {
+        u[i] /= vectorLength;
+    }
 }
 
 int main() {
