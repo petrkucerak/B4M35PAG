@@ -24,7 +24,24 @@ int main(int argc, char **argv)
       }
    }
 
-   // TODO
+   MPI_Scatter(globalVector, chunkSize, MPI_DOUBLE, localVector, size,
+               MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+   double localSum = 0;
+   for (int i = 0; i < chunkSize; ++i) {
+      localSum += localVector[i] * localVector[i];
+   }
+   double sumGlobal;
+   MPI_Allreduce(&localSum, &sumGlobal, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+   double normGlobal = sqrt(sumGlobal);
+
+   // normalize
+   for (int i = 0; i < chunkSize; ++i) {
+      localVector[i] /= normGlobal;
+   }
+
+   MPI_Gather(localVector, chunkSize, MPI_DOUBLE, globalVector, chunkSize,
+              MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
    // Printing vector on process with rank 0
    if (rank == 0) {
