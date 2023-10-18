@@ -53,13 +53,3 @@ vector<vector<double>> generateRandomMatrix(int m, int n, int seed = -1) {
 
     return matrix;
 }
-
-// Do not use this function in parallel vector normalization!
-double computeVectorLength(const vector<double> &u) {
-    double sumSquares = 0;
-    for (int i = 0; i < u.size(); i++) {
-        sumSquares += u[i] * u[i];
-    }
-
-    return sqrt(sumSquares);
-}
