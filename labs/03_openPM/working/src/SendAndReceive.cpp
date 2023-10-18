@@ -1,31 +1,31 @@
 #include <iostream>
-#include <string>
 #include <mpi.h>
+#include <string>
 
 using namespace std;
 
-int main(int argc, char **argv) {
-    MPI_Init(&argc, &argv);
+int main(int argc, char **argv)
+{
+   MPI_Init(&argc, &argv);
 
-    int myRank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+   int myRank;
+   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
 
-    if (myRank == 0) {
-        // Sends message.
-        string message = "IDDQD";
+   if (myRank == 0) {
+      // Sends message.
+      string message = "IDDQD";
 
-       //TODO
-    } else if (myRank == 1) {
-        // Receives message.
-        constexpr int bufSize = 256;
-        char buf[bufSize];
+      // TODO
+   } else if (myRank == 1) {
+      // Receives message.
+      constexpr int bufSize = 256;
+      char buf[bufSize];
 
-        //TODO
+      // TODO
 
-        cout << "Received message size: " << receivedSize << endl;
-        cout << "Received message content: " << string(buf) << endl;
-    }
+      cout << "Received message size: " << receivedSize << endl;
+      cout << "Received message content: " << string(buf) << endl;
+   }
 
-
-    MPI_Finalize();
+   MPI_Finalize();
 }
