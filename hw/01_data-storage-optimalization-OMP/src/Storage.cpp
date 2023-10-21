@@ -54,7 +54,7 @@ int getLevenshteinDistance(vector<vector<int>> records, int A, int B)
    for (int y = 1; y < y_size; ++y) {
       for (int x = 1; x < x_size; ++x) {
          int substitution_cost = 1;
-         if (records[A][x] == records[B][y]) {
+         if (records[A][x - 1] == records[B][y - 1]) {
             substitution_cost = 0;
          }
          TABLE(x, y) =
@@ -69,6 +69,7 @@ int getLevenshteinDistance(vector<vector<int>> records, int A, int B)
       }
    }
 
+   // cout << endl;
    // printTable(x_size, y_size, table);
 
    int ret = TABLE(x_size - 1, y_size - 1);
@@ -82,9 +83,18 @@ int main(int argc, char *argv[])
 
    // The input records, e.g., records[0] is the first record in the input file.
    vector<vector<int>> records = readRecords(programArguments.mInputFilePath);
+   // vector<vector<int>> records = {{1, 2, 5, 5, 5, 5, 3, 2}, {1, 4, 3, 2}};
 
    vector<Edge_Raw> *graph = new vector<Edge_Raw>[records.size()];
    bool v[records.size()];
+
+   // print data
+   // for (int i = 0; i < records.size(); ++i) {
+   //    for (int j = 0; j < records[i].size(); ++j) {
+   //       printf(" %d", records[i][j]);
+   //    }
+   //    printf("\n");
+   // }
 
    for (int i = 0; i < records.size(); ++i) {
       v[i] = false;
@@ -97,18 +107,27 @@ int main(int argc, char *argv[])
       }
    }
 
+   // for (int i = 0; i < records.size(); ++i) {
+   //    for (int j = 0; j < graph[i].size(); ++j) {
+   //       printf(" (%d,%d)", graph[i][j].target, graph[i][j].value);
+   //    }
+   //    printf("\n");
+   // }
+
    // distances graph
    int treeCost = 0;
 
    int added_verticies = 1;
    P_Q *q = new P_Q;
    v[0] = true;
+   // cout << records.size() << endl;
    // find neighbours
    for (int i = 0; i < graph[0].size(); ++i) {
       q->push(Edge(graph[0][i].target, graph[0][i].value));
    }
 
    while (added_verticies != records.size()) {
+      // cout << "NOW" << endl;
       int vertex_id = q->top().target;
       if (!v[vertex_id]) {
 
