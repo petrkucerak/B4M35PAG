@@ -45,7 +45,7 @@ int getLevenshteinDistance(vector<vector<int>> records, int A, int B)
 {
    const int x_size = records[A].size() + 1;
    const int y_size = records[B].size() + 1;
-   int *table = new int[x_size * y_size];
+   int table[x_size * y_size];
 
    for (int i = 0; i < x_size; ++i)
       TABLE(i, 0) = i;
@@ -70,7 +70,6 @@ int getLevenshteinDistance(vector<vector<int>> records, int A, int B)
    // printTable(x_size, y_size, table);
 
    int ret = TABLE(x_size - 1, y_size - 1);
-   delete table;
    return ret;
 }
 
@@ -88,6 +87,7 @@ int main(int argc, char *argv[])
 #pragma omp parallel for
    for (int i = 0; i < records.size(); ++i) {
       v[i] = false;
+#pragma omp parallel for
       for (int j = i + 1; j < records.size(); ++j) {
 
          int cost = getLevenshteinDistance(records, i, j);
@@ -134,6 +134,7 @@ int main(int argc, char *argv[])
       }
    }
 
+   cout << "Nuber of records: " << records.size() << endl;
    cout << "Max threads count: " << omp_get_max_threads() << endl;
 
    cout << treeCost << endl;
