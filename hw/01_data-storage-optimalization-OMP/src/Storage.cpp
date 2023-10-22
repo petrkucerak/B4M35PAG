@@ -66,11 +66,58 @@ int getLevenshteinDistance(vector<vector<int>> records, int A, int B)
       }
    }
 
-   // cout << endl;
+   // cout << endl << "SLOW" << endl;
    // printTable(x_size, y_size, table);
 
    int ret = TABLE(x_size - 1, y_size - 1);
    delete table;
+   return ret;
+}
+
+int getLevenshteinDistanceFast(vector<vector<int>> records, int A, int B)
+{
+   const int x_size = records[A].size() + 1;
+   const int y_size = records[B].size() + 1;
+   int *table = new int[x_size * 2];
+
+   for (int x = 0; x < x_size; ++x)
+      table[x] = x;
+
+   int line = 1;
+   for (int y = 0; y < y_size - 1; ++y) {
+      table[0 + (line * x_size)] = y + 1;
+
+      for (int x = 0; x < x_size - 1; ++x) {
+         int del_cost, ins_cost, sub_cost;
+
+         int sub_parameter = 1;
+         // compare letter
+         if (records[A][x] == records[B][y]) {
+            sub_parameter = 0;
+         }
+         // new values are in bottom row
+         if (line == 1) {
+            del_cost = table[x + 1] + 1;
+            ins_cost = table[x + x_size] + 1;
+            sub_cost = table[x] + sub_parameter;
+            table[x_size + x + 1] = MIN(del_cost, ins_cost, sub_cost);
+         } else {
+            // new valuesa re in top row
+            del_cost = table[x + 1 + x_size] + 1;
+            ins_cost = table[x] + 1;
+            sub_cost = table[x + x_size] + sub_parameter;
+            table[x + 1] = MIN(del_cost, ins_cost, sub_cost);
+         }
+      }
+      if (line == 1)
+         line = 0;
+      else
+         line = 1;
+   }
+
+   int ret = table[((1 - line) * x_size) + x_size - 1];
+   delete[] table;
+
    return ret;
 }
 
@@ -88,10 +135,13 @@ int main(int argc, char *argv[])
 #pragma omp parallel for
    for (int i = 0; i < records.size(); ++i) {
       v[i] = false;
-      #pragma omp parallel for
+#pragma omp parallel for
       for (int j = i + 1; j < records.size(); ++j) {
 
-         int cost = getLevenshteinDistance(records, i, j);
+         // int cost = getLevenshteinDistance(records, i, j);
+         // cout << "C: " << cost << endl;
+         int cost = getLevenshteinDistanceFast(records, i, j);
+         // cout << "F: " << cost << endl;
 
 #pragma omp critical
          {
@@ -135,10 +185,10 @@ int main(int argc, char *argv[])
       }
    }
 
-   cout << "Nuber of records: " << records.size() << endl;
-   cout << "Max threads count: " << omp_get_max_threads() << endl;
+   // cout << "Number of records: " << records.size() << endl;
+   // cout << "Max threads count: " << omp_get_max_threads() << endl;
 
-   cout << treeCost << endl;
+   // cout << treeCost << endl;
    // delete graph;
    delete q;
    writeCost(treeCost, programArguments.mOutputFilePath);
