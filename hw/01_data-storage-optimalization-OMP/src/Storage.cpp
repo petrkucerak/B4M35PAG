@@ -62,10 +62,6 @@ int getLevenshteinDistance(vector<vector<int>> records, int A, int B)
                  TABLE(x, y - 1) + 1,                    // insertion
                  TABLE(x - 1, y - 1) + substitution_cost // substitution
              );
-
-         // printf("[%d,%d] sub: %d, (%d, %d, %d)\n", x, y, substitution_cost,
-         //        TABLE(x - 1, y) + 1, TABLE(x, y - 1) + 1,
-         //        TABLE(x - 1, y - 1) + substitution_cost);
       }
    }
 
@@ -88,13 +84,6 @@ int main(int argc, char *argv[])
    vector<Edge_Raw> *graph = new vector<Edge_Raw>[records.size()];
    bool v[records.size()];
 
-   // print data
-   // for (int i = 0; i < records.size(); ++i) {
-   //    for (int j = 0; j < records[i].size(); ++j) {
-   //       printf(" %d", records[i][j]);
-   //    }
-   //    printf("\n");
-   // }
 
    for (int i = 0; i < records.size(); ++i) {
       v[i] = false;
@@ -106,13 +95,6 @@ int main(int argc, char *argv[])
          graph[j].push_back(Edge_Raw(i, cost));
       }
    }
-
-   // for (int i = 0; i < records.size(); ++i) {
-   //    for (int j = 0; j < graph[i].size(); ++j) {
-   //       printf(" (%d,%d)", graph[i][j].target, graph[i][j].value);
-   //    }
-   //    printf("\n");
-   // }
 
    // distances graph
    int treeCost = 0;
