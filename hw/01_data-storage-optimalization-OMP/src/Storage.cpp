@@ -129,13 +129,9 @@ int main(int argc, char *argv[])
       }
    }
 
-   cout << "Returns an upper bound on the number of threads that 
-       could be used to form a new team if a parallel construct without a
-           num_threads clause were encountered after execution returns
-               from this routine " << omp_get_max_threads() << endl;
+   cout << "Max threads count: " << omp_get_max_threads() << endl;
 
-       cout
-        << treeCost << endl;
+   cout << treeCost << endl;
    // delete graph;
    delete q;
    writeCost(treeCost, programArguments.mOutputFilePath);
