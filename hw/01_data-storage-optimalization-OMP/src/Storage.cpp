@@ -7,7 +7,6 @@
 #include "Utils.h"
 
 #define P_Q priority_queue<Edge, vector<Edge>, CompareEdge>
-#define TABLE(x, y) *(table + (x) + ((y) * x_size))
 #define MIN(X, Y, Z)                                                           \
    (((X) < (Y)) ? ((X) < (Z) ? (X) : (Z)) : ((Y) < (Z) ? (Y) : (Z)))
 
@@ -30,49 +29,6 @@ struct Edge_Raw {
    int value;
    Edge_Raw(int target, int value) : target(target), value(value) {}
 };
-
-void printTable(int x_size, int y_size, int *table)
-{
-   for (int y = 0; y < y_size; ++y) {
-      for (int x = 0; x < x_size; ++x) {
-         printf("%2d ", TABLE(x, y));
-      }
-      printf("\n");
-   }
-}
-
-int getLevenshteinDistance(vector<vector<int>> records, int A, int B)
-{
-   const int x_size = records[A].size() + 1;
-   const int y_size = records[B].size() + 1;
-   int *table = new int[x_size * y_size];
-
-   for (int i = 0; i < x_size; ++i)
-      TABLE(i, 0) = i;
-   for (int i = 0; i < y_size; ++i)
-      TABLE(0, i) = i;
-
-   for (int y = 1; y < y_size; ++y) {
-      for (int x = 1; x < x_size; ++x) {
-         int substitution_cost = 1;
-         if (records[A][x - 1] == records[B][y - 1]) {
-            substitution_cost = 0;
-         }
-         TABLE(x, y) =
-             MIN(TABLE(x - 1, y) + 1,                    // deletion
-                 TABLE(x, y - 1) + 1,                    // insertion
-                 TABLE(x - 1, y - 1) + substitution_cost // substitution
-             );
-      }
-   }
-
-   // cout << endl << "SLOW" << endl;
-   // printTable(x_size, y_size, table);
-
-   int ret = TABLE(x_size - 1, y_size - 1);
-   delete table;
-   return ret;
-}
 
 int getLevenshteinDistanceFast(vector<vector<int>> records, int A, int B)
 {
@@ -121,6 +77,15 @@ int getLevenshteinDistanceFast(vector<vector<int>> records, int A, int B)
    return ret;
 }
 
+void printGraph(vector<vector<int>> graph)
+{
+   for (auto i = 0; i < graph.size(); ++i) {
+      for (auto j = 0; j < graph[i].size(); ++j)
+         printf("%2d ", graph[i][j]);
+      cout << endl;
+   }
+}
+
 int main(int argc, char *argv[])
 {
    auto programArguments = ProgramArguments::Parse(argc, argv);
@@ -129,67 +94,42 @@ int main(int argc, char *argv[])
    vector<vector<int>> records = readRecords(programArguments.mInputFilePath);
    // vector<vector<int>> records = {{1, 2, 5, 5, 5, 5, 3, 2}, {1, 4, 3, 2}};
 
-   vector<Edge_Raw> *graph = new vector<Edge_Raw>[records.size()];
-   bool v[records.size()];
+   const int number_vertices = records.size();
+   vector<vector<int>> graph(number_vertices, vector<int>(number_vertices));
 
-#pragma omp parallel for
+   // #pragma omp parallel for shared(graph)
    for (int i = 0; i < records.size(); ++i) {
-      v[i] = false;
-#pragma omp parallel for
+      // #pragma omp parallel for shared(graph, i)
       for (int j = i + 1; j < records.size(); ++j) {
 
-         // int cost = getLevenshteinDistance(records, i, j);
-         // cout << "C: " << cost << endl;
          int cost = getLevenshteinDistanceFast(records, i, j);
-         // cout << "F: " << cost << endl;
 
-#pragma omp critical
+         // #pragma omp critical
          {
-            // cout << "Thread num " << omp_get_thread_num() << endl;
-            graph[i].push_back(Edge_Raw(j, cost));
-            graph[j].push_back(Edge_Raw(i, cost));
+            graph[i][j] = cost;
+            // graph[j][i] = cost; // TODO: allocate more effectly
          }
       }
    }
+
+   printGraph(graph);
 
    // distances graph
    int treeCost = 0;
 
-   int added_verticies = 1;
-   P_Q *q = new P_Q;
-   v[0] = true;
-   // cout << records.size() << endl;
-   // find neighbours
-   for (int i = 0; i < graph[0].size(); ++i) {
-      q->push(Edge(graph[0][i].target, graph[0][i].value));
+   vector<int> edges;
+   vector<bool> vertices(number_vertices);
+   for (auto i : vertices)
+      i = false;
+   vertices[0] = true;
+   for (auto i = 1; i < number_vertices - 1; ++i){
+      
    }
+      // cout << "Number of records: " << records.size() << endl;
+      // cout << "Max threads count: " << omp_get_max_threads() << endl;
 
-   while (added_verticies != records.size()) {
-      // cout << "NOW" << endl;
-      int vertex_id = q->top().target;
-      if (!v[vertex_id]) {
+      // cout << treeCost << endl;
+      // delete graph;
 
-         v[vertex_id] = true;
-         treeCost += q->top().value;
-         ++added_verticies;
-         q->pop();
-
-         // find neighbours
-         for (int i = 0; i < graph[vertex_id].size(); ++i) {
-            q->push(
-                Edge(graph[vertex_id][i].target, graph[vertex_id][i].value));
-         }
-
-      } else {
-         q->pop();
-      }
-   }
-
-   // cout << "Number of records: " << records.size() << endl;
-   // cout << "Max threads count: " << omp_get_max_threads() << endl;
-
-   // cout << treeCost << endl;
-   // delete graph;
-   delete q;
-   writeCost(treeCost, programArguments.mOutputFilePath);
+      writeCost(treeCost, programArguments.mOutputFilePath);
 }
