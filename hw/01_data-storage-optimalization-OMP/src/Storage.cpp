@@ -85,9 +85,9 @@ int main(int argc, char *argv[])
    vector<Edge_Raw> *graph = new vector<Edge_Raw>[records.size()];
    bool v[records.size()];
 
+#pragma omp parallel for
    for (int i = 0; i < records.size(); ++i) {
       v[i] = false;
-#pragma omp parallel for
       for (int j = i + 1; j < records.size(); ++j) {
 
          int cost = getLevenshteinDistance(records, i, j);
