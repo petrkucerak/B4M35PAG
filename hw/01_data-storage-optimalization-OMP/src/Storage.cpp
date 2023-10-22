@@ -87,12 +87,17 @@ int main(int argc, char *argv[])
 
    for (int i = 0; i < records.size(); ++i) {
       v[i] = false;
+#pragma omp parallel for
       for (int j = i + 1; j < records.size(); ++j) {
 
          int cost = getLevenshteinDistance(records, i, j);
 
-         graph[i].push_back(Edge_Raw(j, cost));
-         graph[j].push_back(Edge_Raw(i, cost));
+#pragma omp critical
+         {
+            // cout << "Thread num " << omp_get_thread_num() << endl;
+            graph[i].push_back(Edge_Raw(j, cost));
+            graph[j].push_back(Edge_Raw(i, cost));
+         }
       }
    }
 
