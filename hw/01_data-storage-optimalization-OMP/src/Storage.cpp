@@ -1,5 +1,6 @@
 #include <cstring>
 #include <iostream>
+#include <limits.h>
 #include <omp.h>
 #include <queue>
 #include <vector>
@@ -117,19 +118,21 @@ int main(int argc, char *argv[])
    // distances graph
    int treeCost = 0;
 
-   vector<int> edges;
    vector<bool> vertices(number_vertices);
    for (auto i : vertices)
       i = false;
    vertices[0] = true;
-   for (auto i = 1; i < number_vertices - 1; ++i){
-      
+   int search_size = 0;
+   for (auto i = 1; i < number_vertices - 1; ++i) {
+      // find next target
+      int min = INT_MAX;
+      // TODO: continue here
    }
-      // cout << "Number of records: " << records.size() << endl;
-      // cout << "Max threads count: " << omp_get_max_threads() << endl;
+   // cout << "Number of records: " << records.size() << endl;
+   // cout << "Max threads count: " << omp_get_max_threads() << endl;
 
-      // cout << treeCost << endl;
-      // delete graph;
+   // cout << treeCost << endl;
+   // delete graph;
 
-      writeCost(treeCost, programArguments.mOutputFilePath);
+   writeCost(treeCost, programArguments.mOutputFilePath);
 }
