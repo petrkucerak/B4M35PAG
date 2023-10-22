@@ -1,5 +1,6 @@
 #include <cstring>
 #include <iostream>
+#include <omp.h>
 #include <queue>
 #include <vector>
 
@@ -84,7 +85,6 @@ int main(int argc, char *argv[])
    vector<Edge_Raw> *graph = new vector<Edge_Raw>[records.size()];
    bool v[records.size()];
 
-
    for (int i = 0; i < records.size(); ++i) {
       v[i] = false;
       for (int j = i + 1; j < records.size(); ++j) {
@@ -129,7 +129,13 @@ int main(int argc, char *argv[])
       }
    }
 
-   cout << treeCost << endl;
+   cout << "Returns an upper bound on the number of threads that 
+       could be used to form a new team if a parallel construct without a
+           num_threads clause were encountered after execution returns
+               from this routine " << omp_get_max_threads() << endl;
+
+       cout
+        << treeCost << endl;
    // delete graph;
    delete q;
    writeCost(treeCost, programArguments.mOutputFilePath);
