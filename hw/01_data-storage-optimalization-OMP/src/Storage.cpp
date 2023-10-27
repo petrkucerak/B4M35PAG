@@ -33,40 +33,6 @@ struct Edge_Raw {
    Edge_Raw(int target, int value) : target(target), value(value) {}
 };
 
-int getLevenshteinDistance(vector<vector<int>> records, int A, int B)
-{
-   const int x_size = records[A].size() + 1;
-   const int y_size = records[B].size() + 1;
-   int *table = (int *)malloc(sizeof(int) * x_size * y_size);
-
-   for (int i = 0; i < x_size; ++i)
-      TABLE(i, 0) = i;
-   for (int i = 0; i < y_size; ++i)
-      TABLE(0, i) = i;
-
-   for (int y = 1; y < y_size; ++y) {
-      for (int x = 1; x < x_size; ++x) {
-         int substitution_cost = 1;
-         if (records[A][x - 1] == records[B][y - 1]) {
-            substitution_cost = 0;
-         }
-         TABLE(x, y) =
-             MIN(TABLE(x - 1, y) + 1,                    // deletion
-                 TABLE(x, y - 1) + 1,                    // insertion
-                 TABLE(x - 1, y - 1) + substitution_cost // substitution
-             );
-      }
-   }
-
-   // cout << endl;
-   // printTable(x_size, y_size, table);
-
-   int ret = TABLE(x_size - 1, y_size - 1);
-   free(table);
-   table = NULL;
-   return ret;
-}
-
 void printGraph(int *graph, int number_vertices)
 {
    for (auto i = 0; i < number_vertices; ++i) {
@@ -86,23 +52,43 @@ int main(int argc, char *argv[])
 
    const int number_vertices = records.size();
    int *graph = (int *)malloc(sizeof(int) * number_vertices * number_vertices);
+   if (graph == NULL)
+      fprintf(stderr,
+              "ERROR: Can not allocate memmory for grpah memory block\n");
    for (auto i = 0; i < number_vertices; ++i) {
       for (auto j = 0; j < number_vertices; ++j)
          GRAPH(i, j) = 0;
    }
 
    // #pragma omp parallel for shared(graph)
-   for (int i = 0; i < records.size(); ++i) {
-      // #pragma omp parallel for shared(graph, i)
-      for (int j = i + 1; j < records.size(); ++j) {
+   for (int i = 0; i < number_vertices; ++i) {
+      for (int j = i + 1; j < number_vertices; ++j) {
 
-         int cost = getLevenshteinDistance(records, i, j);
+         // TODO: implement L here to minimalize cost by calling a function
+         const int x_size = records[i].size() + 1;
+         const int y_size = records[j].size() + 1;
 
-         // #pragma omp critical
-         {
-            GRAPH(i, j) = cost;
-            // GRAPH(j, i) = cost; // TODO: allocate more effectly
+         vector<int> top_array(y_size + 1, 0);
+         vector<int> bottom_array(y_size + 1, 0);
+         for (int x = 0; x <= y_size; ++x) {
+            top_array[x] = x;
          }
+
+         for (int y = 1; y <= x_size; ++y) {
+            bottom_array[0] = y;
+
+            for (int x = 1; x <= y_size; ++x) {
+               if (records[i][y - 1] == records[j][x - 1])
+                  bottom_array[x] = top_array[x - 1];
+               else
+                  bottom_array[x] =
+                      MIN(bottom_array[x - 1], top_array[x], top_array[x - 1]) +
+                      1;
+            }
+            top_array = bottom_array;
+         }
+         GRAPH(i, j) = bottom_array[y_size];
+         // GRAPH(j, i) = bottom_array[y_size]; // SYMETRIC DUPLICITY
       }
    }
 
@@ -111,18 +97,42 @@ int main(int argc, char *argv[])
    // distances graph
    int treeCost = 0;
 
-   vector<bool> is_vertices_used(number_vertices);
-   vector<int> costs(number_vertices);
+   vector<bool> is_edge_used(number_vertices);
+   vector<int> edge_costs(number_vertices);
 
-   is_vertices_used[0] = true;
-   costs[0] = 0;
-
-   int added_edges = 0;
+   is_edge_used[0] = true;
+   edge_costs[0] = 0;
 
    for (int i = 1; i < number_vertices; ++i) {
-      costs[i] = graph[i];
+      edge_costs[i] = graph[i];
    }
-
+   for (int j = 0; j < number_vertices - 1; ++j) {
+      int min_no = -1;
+      int min_val = INT_MAX;
+      for (int i = 1; i < number_vertices; ++i) {
+         if (!is_edge_used[i]) {
+            if (edge_costs[i] < min_val) {
+               min_val = edge_costs[i];
+               min_no = i;
+            }
+         }
+         is_edge_used[min_no] = true;
+         for (int i = 0; i < number_vertices; ++i) {
+            if (!is_edge_used[i]) {
+               if (i > min_no)
+                  edge_costs[i] =
+                      min(graph[number_vertices * min_no + i], edge_costs[i]);
+               else
+                  edge_costs[i] =
+                      min(graph[number_vertices * i + min_no], edge_costs[i]);
+            }
+         }
+      }
+   }
+   for (int i = 0; i < number_vertices; ++i) {
+      treeCost += edge_costs[i];
+   }
+   cout << treeCost << endl;
    free(graph);
    graph = NULL;
 
