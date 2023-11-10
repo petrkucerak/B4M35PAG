@@ -157,12 +157,13 @@ int main(int argc, char **argv)
       }
 
       do {
+         achieved_accuracy = true;
          for (unsigned int i = 0; i < map.size(); ++i) {
             if (mask[i] != PERMANENT) {
                switch (mask[i]) {
                case LEFT_TOP:
-                  // tmp_map[i] =
-                  //     (map[0] + map[1] + map[width] + map[width + 1]) / 4;
+                  tmp_map[i] =
+                      (map[0] + map[1] + map[width] + map[width + 1]) / 4;
                   break;
                case TOP:
                   tmp_map[i] =
@@ -171,52 +172,52 @@ int main(int argc, char **argv)
                       6;
                   break;
                case RIGHT_TOP:
-                  // tmp_map[i] = (map[i - 1] + map[i] + map[i + width - 1] +
-                  //               map[i + width]) /
-                  //              4;
+                  tmp_map[i] = (map[i - 1] + map[i] + map[i + width - 1] +
+                                map[i + width]) /
+                               4;
                   break;
                case RIGHT:
-                  // tmp_map[i] =
-                  //     (map[i - width - 1] + map[i - width] + map[i - 1] +
-                  //      map[i] + map[i + width - 1] + map[i + width]) /
-                  //     6;
+                  tmp_map[i] =
+                      (map[i - width - 1] + map[i - width] + map[i - 1] +
+                       map[i] + map[i + width - 1] + map[i + width]) /
+                      6;
                   break;
                case RIGHT_BOTTOM:
-                  // tmp_map[i] = (map[i - width - 1] + map[i - width] +
-                  //               map[i - 1] + map[i]) /
-                  //              4;
+                  tmp_map[i] = (map[i - width - 1] + map[i - width] +
+                                map[i - 1] + map[i]) /
+                               4;
                   break;
                case BOTTOM:
-                  // tmp_map[i] =
-                  //     (map[i - width - 1] + map[i - width] +
-                  //      map[i - width + 1] + map[i - 1] + map[i] + map[i + 1])
-                  //      /
-                  //     6;
+                  tmp_map[i] =
+                      (map[i - width - 1] + map[i - width] +
+                       map[i - width + 1] + map[i - 1] + map[i] + map[i + 1]) /
+                      6;
                   break;
                case LEFT_BOTTOM:
-                  // tmp_map[i] = (map[i - width] + map[i - width + 1] + map[i]
-                  // +
-                  //               map[i + 1]) /
-                  //              4;
+                  tmp_map[i] = (map[i - width] + map[i - width + 1] + map[i] +
+                                map[i + 1]) /
+                               4;
                   break;
                case LEFT:
-                  // tmp_map[i] =
-                  //     (map[i - width] + map[i - width + 1] + map[i] +
-                  //      map[i + 1] + map[i + width] + map[i + width + 1]) /
-                  //     6;
+                  tmp_map[i] =
+                      (map[i - width] + map[i - width + 1] + map[i] +
+                       map[i + 1] + map[i + width] + map[i + width + 1]) /
+                      6;
                   break;
 
                default: // Normal
-                  tmp_map[i] =
-                      (map[i - width - 1] + map[i - width] +
-                       map[i - width + 1] + map[i + 1] + map[i + width + 1] +
-                       map[i + width] + map[i + width - 1] + map[i - 1]) +
-                      map[i] / 9;
+                  tmp_map[i] = (map[i - width - 1] + map[i - width] +
+                                map[i - width + 1] + map[i + 1] +
+                                map[i + width + 1] + map[i + width] +
+                                map[i + width - 1] + map[i - 1] + map[i]) /
+                               9;
                   break;
                }
 
-               if (abs(tmp_map[i] - map[i]) <= ACCURACY)
+               if (achieved_accuracy && (tmp_map[i] - map[i]) <= ACCURACY)
                   achieved_accuracy = true;
+               else
+                  achieved_accuracy = false;
             } else { // permanent spots
                tmp_map[i] = map[i];
             }
