@@ -11,11 +11,11 @@
 using namespace std;
 using namespace std::chrono;
 
-#define ACCURACY 0.00001f
+#define ACCURACY 0.0001f
 #define DEFAULT_TEMPERATURE 128
-#define GET_MAP(x, y) *(map + (x) + width * (y))
-#define GET_MASK(x, y) *(mask + (x) + width * (y))
-#define GET_TMP_MAP(x, y) *(tmp_map + (x) + width * (y))
+#define GET_MAP(x, y) map[(x) + width * (y)]
+#define GET_MASK(x, y) mask[(x) + width * (y)]
+#define GET_TMP_MAP(x, y) tmp_map[(x) + width * (y)]
 
 #define PERMANENT 1
 #define LEFT_TOP 10
@@ -66,15 +66,15 @@ tuple<int, int, vector<Spot>> readInstance(string instanceFileName)
 }
 
 void writeOutput(const int myRank, const int width, const int height,
-                 const string outputFileName, float *temperatures)
+                 const string outputFileName, const vector<float> &temperatures)
 {
    // Draw the output image in Netpbm format.
    ofstream file(outputFileName);
    if (file.is_open()) {
       if (myRank == 0) {
          file << "P2\n" << width << "\n" << height << "\n" << 255 << "\n";
-         for (unsigned int i = 0; i < width * height; ++i) {
-            file << (int)max(min(temperatures[i], 255.0f), 0.0f) << " ";
+         for (auto temperature : temperatures) {
+            file << (int)max(min(temperature, 255.0f), 0.0f) << " ";
          }
       }
    }
@@ -115,8 +115,6 @@ int main(int argc, char **argv)
    if (myRank == 0) {
       tie(width, height, spots) = readInstance(argv[1]);
    }
-   MPI_Bcast(&height, 1, MPI_INT, 0, MPI_COMM_WORLD);
-   MPI_Bcast(&width, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
    high_resolution_clock::time_point start = high_resolution_clock::now();
 
@@ -124,8 +122,9 @@ int main(int argc, char **argv)
    // elements and it contains the linearized matrix of temperatures in
    // row-major order (see
    // https://en.wikipedia.org/wiki/Row-_and_column-major_order)
-   float *map = new float[width * height];
-   int *mask = new int[width * height];
+   vector<float> map(width * height, DEFAULT_TEMPERATURE);
+   vector<float> tmp_map(width * height);
+   vector<int> mask(width * height, 0);
    bool achieved_accuracy = false;
    if (myRank == 0) {
       for (int y = 0; y < height; ++y) {
@@ -150,147 +149,107 @@ int main(int argc, char **argv)
                GET_MASK(x, y) = RIGHT;
             else if (x == 0)
                GET_MASK(x, y) = LEFT;
-            else
-               GET_MASK(x, y) = 0;
          }
       }
-      for (int i = 0; i < height * width; ++i)
-         map[i] = DEFAULT_TEMPERATURE;
       for (auto &i : spots) {
          GET_MAP(i.mX, i.mY) = i.mTemperature;
          GET_MASK(i.mX, i.mY) = PERMANENT;
       }
-      // Print mask
+
       // for (int y = 0; y < height; ++y) {
       //    for (int x = 0; x < width; ++x) {
       //       printf(" %2d", GET_MASK(x, y));
       //    }
       //    printf("\n");
       // }
-      // Print map
-      // for (int y = 0; y < height; ++y) {
-      //    for (int x = 0; x < width; ++x) {
-      //       printf(" %3.0f", GET_MAP(x, y));
-      //    }
-      //    printf("\n");
-      // }
-   }
 
-   MPI_Bcast(mask, width * height, MPI_INT, 0, MPI_COMM_WORLD);
-   float *lt_map = new float[width * height / worldSize + 2 * (width + 1)];
-   float *l_map = new float[width * height / worldSize + 2 * (width + 1)];
-   MPI_Scatter(map, width * height / worldSize, MPI_FLOAT, l_map + width,
-               worldSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
-   if (myRank == 0) {
-      for (int i = 0; i < width * height / worldSize + 2 * (width + 1); ++i) {
-         printf("%3.0f ", l_map[i]);
-      }
-      printf("\n");
-   }
-   MPI_Finalize();
-   return 0;
-   do {
-      achieved_accuracy = true;
-      for (unsigned int i = width; i < width * height / worldSize; ++i) {
-         if (mask[i] != PERMANENT) {
-            // TODO: copy data out of the area
-            // local array [prew data (width + 1), section, next data (width +
-            // 1)]
-            switch (mask[i]) {
-            case LEFT_TOP:
-               lt_map[i] =
-                   (l_map[0] + l_map[1] + l_map[width] + l_map[width + 1]) / 4;
-               break;
-            case TOP:
-               lt_map[i] = (l_map[i - 1] + l_map[i] + l_map[i + 1] +
-                            l_map[width - 1 + i] + l_map[width + i] +
-                            l_map[i + width + 1]) /
-                           6;
-               break;
-            case RIGHT_TOP:
-               lt_map[i] = (map[i - 1] + l_map[i] + l_map[i + width - 1] +
-                            l_map[i + width]) /
-                           4;
-               break;
-            case RIGHT:
-               lt_map[i] =
-                   (map[i - width - 1] + l_map[i - width] + l_map[i - 1] +
-                    l_map[i] + l_map[i + width - 1] + l_map[i + width]) /
-                   6;
-               break;
-            case RIGHT_BOTTOM:
-               lt_map[i] = (map[i - width - 1] + l_map[i - width] +
-                            l_map[i - 1] + l_map[i]) /
-                           4;
-               break;
-            case BOTTOM:
-               lt_map[i] = (map[i - width - 1] + l_map[i - width] +
-                            l_map[i - width + 1] + l_map[i - 1] + l_map[i] +
-                            l_map[i + 1]) /
-                           6;
-               break;
-            case LEFT_BOTTOM:
-               lt_map[i] = (map[i - width] + l_map[i - width + 1] + l_map[i] +
-                            l_map[i + 1]) /
-                           4;
-               break;
-            case LEFT:
-               lt_map[i] =
-                   (map[i - width] + l_map[i - width + 1] + l_map[i] +
-                    l_map[i + 1] + l_map[i + width] + l_map[i + width + 1]) /
-                   6;
-               break;
+      do {
+         achieved_accuracy = true;
+         for (unsigned int i = 0; i < map.size(); ++i) {
+            if (mask[i] != PERMANENT) {
+               switch (mask[i]) {
+               case LEFT_TOP:
+                  tmp_map[i] =
+                      (map[0] + map[1] + map[width] + map[width + 1]) / 4;
+                  break;
+               case TOP:
+                  tmp_map[i] =
+                      (map[i - 1] + map[i] + map[i + 1] + map[width - 1 + i] +
+                       map[width + i] + map[i + width + 1]) /
+                      6;
+                  break;
+               case RIGHT_TOP:
+                  tmp_map[i] = (map[i - 1] + map[i] + map[i + width - 1] +
+                                map[i + width]) /
+                               4;
+                  break;
+               case RIGHT:
+                  tmp_map[i] =
+                      (map[i - width - 1] + map[i - width] + map[i - 1] +
+                       map[i] + map[i + width - 1] + map[i + width]) /
+                      6;
+                  break;
+               case RIGHT_BOTTOM:
+                  tmp_map[i] = (map[i - width - 1] + map[i - width] +
+                                map[i - 1] + map[i]) /
+                               4;
+                  break;
+               case BOTTOM:
+                  tmp_map[i] =
+                      (map[i - width - 1] + map[i - width] +
+                       map[i - width + 1] + map[i - 1] + map[i] + map[i + 1]) /
+                      6;
+                  break;
+               case LEFT_BOTTOM:
+                  tmp_map[i] = (map[i - width] + map[i - width + 1] + map[i] +
+                                map[i + 1]) /
+                               4;
+                  break;
+               case LEFT:
+                  tmp_map[i] =
+                      (map[i - width] + map[i - width + 1] + map[i] +
+                       map[i + 1] + map[i + width] + map[i + width + 1]) /
+                      6;
+                  break;
 
-            default: // Normal
-               lt_map[i] = (map[i - width - 1] + l_map[i - width] +
-                            l_map[i - width + 1] + l_map[i + 1] +
-                            l_map[i + width + 1] + l_map[i + width] +
-                            l_map[i + width - 1] + l_map[i - 1] + l_map[i]) /
-                           9;
-               break;
-            }
+               default: // Normal
+                  tmp_map[i] = (map[i - width - 1] + map[i - width] +
+                                map[i - width + 1] + map[i + 1] +
+                                map[i + width + 1] + map[i + width] +
+                                map[i + width - 1] + map[i - 1] + map[i]) /
+                               9;
+                  break;
+               }
 
-            if (achieved_accuracy && abs(map[i] - lt_map[i]) <= ACCURACY)
-               achieved_accuracy = true;
-            else
-               achieved_accuracy = false;
-         } else { // permanent spots
-            lt_map[i] = l_map[i];
-         }
-      }
-
-      // copy memmory
-      memcpy(l_map, lt_map, height * width * sizeof(float));
-
-      if (myRank == 0) {
-         bool *accuracy_list = new bool[worldSize];
-         MPI_Gather(&achieved_accuracy, 1, MPI_CXX_BOOL, accuracy_list,
-                    worldSize, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
-         for (int i = 0; i < worldSize; ++i) {
-            if (accuracy_list[i] != true) {
-               achieved_accuracy = false;
-               break;
+               if (achieved_accuracy && abs(map[i] - tmp_map[i]) <= ACCURACY)
+                  achieved_accuracy = true;
+               else
+                  achieved_accuracy = false;
+            } else { // permanent spots
+               tmp_map[i] = map[i];
             }
          }
+
+         // copy memmory
+         map.assign(tmp_map.begin(), tmp_map.end());
+
+         // printf("\n\n\n");
+         // for (int y = 0; y < height; ++y) {
+         //    for (int x = 0; x < width; ++x) {
+         //       printf(" %3.0f", GET_MAP(x, y));
+         //    }
+         //    printf("\n");
+         // }
+
+      } while (!achieved_accuracy);
+
+      for (int y = 0; y < height; ++y) {
+         for (int x = 0; x < width; ++x) {
+            printf(" %3.0f", GET_MAP(x, y));
+         }
+         printf("\n");
       }
-      MPI_Bcast(&achieved_accuracy, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
-
-      // printf("\n\n\n");
-      // for (int y = 0; y < height; ++y) {
-      //    for (int x = 0; x < width; ++x) {
-      //       printf(" %3.0f", GET_MAP(x, y));
-      //    }
-      //    printf("\n");
-      // }
-
-   } while (!achieved_accuracy);
-
-   // for (int y = 0; y < height; ++y) {
-   //    for (int x = 0; x < width; ++x) {
-   //       printf(" %3.0f", GET_MAP(x, y));
-   //    }
-   //    printf("\n");
-   // }
+   }
 
    //-----------------------\\
 
@@ -303,8 +262,6 @@ int main(int argc, char **argv)
       string outputFileName(argv[2]);
       writeOutput(myRank, width, height, outputFileName, map);
    }
-
-   delete[] map, mask, l_map, lt_map;
 
    MPI_Finalize();
    return 0;
