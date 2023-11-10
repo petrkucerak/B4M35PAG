@@ -11,6 +11,22 @@
 using namespace std;
 using namespace std::chrono;
 
+#define ACCURACY 0.00001f
+#define DEFAULT_TEMPERATURE 128.0
+#define GET_MAP(x, y) map[(x) + width * (y)]
+#define GET_MASK(x, y) mask[(x) + width * (y)]
+#define GET_TMP_MAP(x, y) tmp_map[(x) + width * (y)]
+
+#define PERMANENT 1
+#define LEFT_TOP 10
+#define TOP 11
+#define RIGHT_TOP 12
+#define RIGHT 13
+#define RIGHT_BOTTOM 14
+#define BOTTOM 15
+#define LEFT_BOTTOM 16
+#define LEFT 17
+
 // Spot with permanent temperature on coordinates [x,y].
 struct Spot {
    int mX;
@@ -102,16 +118,122 @@ int main(int argc, char **argv)
 
    high_resolution_clock::time_point start = high_resolution_clock::now();
 
-   //-----------------------\\
-    // Insert your code here \\
-    //        |  |  |        \\
-    //        V  V  V        \\
-
-   // TODO: Fill this array on processor with rank 0. It must have height *
-   // width elements and it contains the linearized matrix of temperatures in
+   // Fill this array on processor with rank 0. It must have height * width
+   // elements and it contains the linearized matrix of temperatures in
    // row-major order (see
    // https://en.wikipedia.org/wiki/Row-_and_column-major_order)
-   vector<float> temperatures;
+   vector<float> map(width * height, DEFAULT_TEMPERATURE);
+   vector<float> tmp_map(width * height);
+   vector<int> mask(width * height, 0);
+   bool achieved_accuracy = false;
+   if (myRank == 0) {
+      for (int y = 0; y < height; ++y) {
+         for (int x = 0; x < width; ++x) {
+            // Handle borders
+            // top
+            if (y == 0) {
+               if (x == 0 && y == 0)
+                  GET_MASK(x, y) = LEFT_TOP;
+               else if (x == width - 1 && y == 0)
+                  GET_MASK(x, y) = RIGHT_TOP;
+               else
+                  GET_MASK(x, y) = TOP;
+            } else if (y == height - 1) { // bottom
+               if (x == width - 1 && y == height - 1)
+                  GET_MASK(x, y) = RIGHT_BOTTOM;
+               else if (x == 0 && y == height - 1)
+                  GET_MASK(x, y) = LEFT_BOTTOM;
+               else
+                  GET_MASK(x, y) = BOTTOM;
+            } else if (x == width - 1)
+               GET_MASK(x, y) = RIGHT;
+            else if (x == 0)
+               GET_MASK(x, y) = LEFT;
+         }
+      }
+      for (auto &i : spots) {
+         GET_MAP(i.mX, i.mY) = i.mTemperature;
+         GET_MASK(i.mX, i.mY) = PERMANENT;
+      }
+
+      do {
+         for (unsigned int i = 0; i < map.size(); ++i) {
+            if (mask[i] != PERMANENT) {
+               switch (mask[i]) {
+               case LEFT_TOP:
+                  // tmp_map[i] =
+                  //     (map[0] + map[1] + map[width] + map[width + 1]) / 4;
+                  break;
+               case TOP:
+                  tmp_map[i] =
+                      (map[i - 1] + map[i] + map[i + 1] + map[width - 1 + i] +
+                       map[width + i] + map[i + width + 1]) /
+                      6;
+                  break;
+               case RIGHT_TOP:
+                  // tmp_map[i] = (map[i - 1] + map[i] + map[i + width - 1] +
+                  //               map[i + width]) /
+                  //              4;
+                  break;
+               case RIGHT:
+                  // tmp_map[i] =
+                  //     (map[i - width - 1] + map[i - width] + map[i - 1] +
+                  //      map[i] + map[i + width - 1] + map[i + width]) /
+                  //     6;
+                  break;
+               case RIGHT_BOTTOM:
+                  // tmp_map[i] = (map[i - width - 1] + map[i - width] +
+                  //               map[i - 1] + map[i]) /
+                  //              4;
+                  break;
+               case BOTTOM:
+                  // tmp_map[i] =
+                  //     (map[i - width - 1] + map[i - width] +
+                  //      map[i - width + 1] + map[i - 1] + map[i] + map[i + 1])
+                  //      /
+                  //     6;
+                  break;
+               case LEFT_BOTTOM:
+                  // tmp_map[i] = (map[i - width] + map[i - width + 1] + map[i]
+                  // +
+                  //               map[i + 1]) /
+                  //              4;
+                  break;
+               case LEFT:
+                  // tmp_map[i] =
+                  //     (map[i - width] + map[i - width + 1] + map[i] +
+                  //      map[i + 1] + map[i + width] + map[i + width + 1]) /
+                  //     6;
+                  break;
+
+               default: // Normal
+                  tmp_map[i] =
+                      (map[i - width - 1] + map[i - width] +
+                       map[i - width + 1] + map[i + 1] + map[i + width + 1] +
+                       map[i + width] + map[i + width - 1] + map[i - 1]) +
+                      map[i] / 9;
+                  break;
+               }
+
+               if (abs(tmp_map[i] - map[i]) <= ACCURACY)
+                  achieved_accuracy = true;
+            } else { // permanent spots
+               tmp_map[i] = map[i];
+            }
+         }
+
+         // copy memmory
+         map.assign(tmp_map.begin(), tmp_map.end());
+
+      } while (!achieved_accuracy);
+
+      for (int y = 0; y < height; ++y) {
+         for (int x = 0; x < width; ++x) {
+            printf(" %.2f", GET_MAP(x, y));
+         }
+         printf("\n");
+      }
+   }
 
    //-----------------------\\
 
@@ -122,7 +244,7 @@ int main(int argc, char **argv)
 
    if (myRank == 0) {
       string outputFileName(argv[2]);
-      writeOutput(myRank, width, height, outputFileName, temperatures);
+      writeOutput(myRank, width, height, outputFileName, map);
    }
 
    MPI_Finalize();
