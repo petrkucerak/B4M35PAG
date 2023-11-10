@@ -181,91 +181,92 @@ int main(int argc, char **argv)
                   MPI_FLOAT, 0, MPI_COMM_WORLD);
       achieved_accuracy = true;
       for (int i = 0; i < width * height / worldSize; ++i) {
-         if (mask[i + WORLD_CORRECTION] != PERMANENT) {
-            switch (mask[i + WORLD_CORRECTION]) {
+         const int word_correction = word_correction;
+         if (mask[i + word_correction] != PERMANENT) {
+            switch (mask[i + word_correction]) {
             case LEFT_TOP:
                local_map[i] =
                    (map[0] + map[1] + map[width] + map[width + 1]) / 4;
                break;
             case TOP:
                local_map[i] =
-                   (map[i + WORLD_CORRECTION - 1] + map[i + WORLD_CORRECTION] +
-                    map[i + WORLD_CORRECTION + 1] +
-                    map[width - 1 + i + WORLD_CORRECTION] +
-                    map[width + i + WORLD_CORRECTION] +
-                    map[i + WORLD_CORRECTION + width + 1]) /
+                   (map[i + word_correction - 1] + map[i + word_correction] +
+                    map[i + word_correction + 1] +
+                    map[width - 1 + i + word_correction] +
+                    map[width + i + word_correction] +
+                    map[i + word_correction + width + 1]) /
                    6;
                break;
             case RIGHT_TOP:
                local_map[i] =
-                   (map[i + WORLD_CORRECTION - 1] + map[i + WORLD_CORRECTION] +
-                    map[i + WORLD_CORRECTION + width - 1] +
-                    map[i + WORLD_CORRECTION + width]) /
+                   (map[i + word_correction - 1] + map[i + word_correction] +
+                    map[i + word_correction + width - 1] +
+                    map[i + word_correction + width]) /
                    4;
                break;
             case RIGHT:
                local_map[i] =
-                   (map[i + WORLD_CORRECTION - width - 1] +
-                    map[i + WORLD_CORRECTION - width] +
-                    map[i + WORLD_CORRECTION - 1] + map[i + WORLD_CORRECTION] +
-                    map[i + WORLD_CORRECTION + width - 1] +
-                    map[i + WORLD_CORRECTION + width]) /
+                   (map[i + word_correction - width - 1] +
+                    map[i + word_correction - width] +
+                    map[i + word_correction - 1] + map[i + word_correction] +
+                    map[i + word_correction + width - 1] +
+                    map[i + word_correction + width]) /
                    6;
                break;
             case RIGHT_BOTTOM:
                local_map[i] =
-                   (map[i + WORLD_CORRECTION - width - 1] +
-                    map[i + WORLD_CORRECTION - width] +
-                    map[i + WORLD_CORRECTION - 1] + map[i + WORLD_CORRECTION]) /
+                   (map[i + word_correction - width - 1] +
+                    map[i + word_correction - width] +
+                    map[i + word_correction - 1] + map[i + word_correction]) /
                    4;
                break;
             case BOTTOM:
                local_map[i] =
-                   (map[i + WORLD_CORRECTION - width - 1] +
-                    map[i + WORLD_CORRECTION - width] +
-                    map[i + WORLD_CORRECTION - width + 1] +
-                    map[i + WORLD_CORRECTION - 1] + map[i + WORLD_CORRECTION] +
-                    map[i + WORLD_CORRECTION + 1]) /
+                   (map[i + word_correction - width - 1] +
+                    map[i + word_correction - width] +
+                    map[i + word_correction - width + 1] +
+                    map[i + word_correction - 1] + map[i + word_correction] +
+                    map[i + word_correction + 1]) /
                    6;
                break;
             case LEFT_BOTTOM:
                local_map[i] =
-                   (map[i + WORLD_CORRECTION - width] +
-                    map[i + WORLD_CORRECTION - width + 1] +
-                    map[i + WORLD_CORRECTION] + map[i + WORLD_CORRECTION + 1]) /
+                   (map[i + word_correction - width] +
+                    map[i + word_correction - width + 1] +
+                    map[i + word_correction] + map[i + word_correction + 1]) /
                    4;
                break;
             case LEFT:
                local_map[i] =
-                   (map[i + WORLD_CORRECTION - width] +
-                    map[i + WORLD_CORRECTION - width + 1] +
-                    map[i + WORLD_CORRECTION] + map[i + WORLD_CORRECTION + 1] +
-                    map[i + WORLD_CORRECTION + width] +
-                    map[i + WORLD_CORRECTION + width + 1]) /
+                   (map[i + word_correction - width] +
+                    map[i + word_correction - width + 1] +
+                    map[i + word_correction] + map[i + word_correction + 1] +
+                    map[i + word_correction + width] +
+                    map[i + word_correction + width + 1]) /
                    6;
                break;
 
             default: // Normal
                local_map[i] =
-                   (map[i + WORLD_CORRECTION - width - 1] +
-                    map[i + WORLD_CORRECTION - width] +
-                    map[i + WORLD_CORRECTION - width + 1] +
-                    map[i + WORLD_CORRECTION + 1] +
-                    map[i + WORLD_CORRECTION + width + 1] +
-                    map[i + WORLD_CORRECTION + width] +
-                    map[i + WORLD_CORRECTION + width - 1] +
-                    map[i + WORLD_CORRECTION - 1] + map[i + WORLD_CORRECTION]) /
+                   (map[i + word_correction - width - 1] +
+                    map[i + word_correction - width] +
+                    map[i + word_correction - width + 1] +
+                    map[i + word_correction + 1] +
+                    map[i + word_correction + width + 1] +
+                    map[i + word_correction + width] +
+                    map[i + word_correction + width - 1] +
+                    map[i + word_correction - 1] + map[i + word_correction]) /
                    9;
                break;
             }
 
             if (achieved_accuracy &&
-                abs(map[i + WORLD_CORRECTION] - local_map[i]) <= ACCURACY)
+                abs(map[i + word_correction] - local_map[i]) <= ACCURACY)
                achieved_accuracy = true;
             else
                achieved_accuracy = false;
          } else { // permanent spots
-            local_map[i] = map[i + WORLD_CORRECTION];
+            local_map[i] = map[i + word_correction];
          }
       }
       MPI_Gather(&achieved_accuracy, 1, MPI_CXX_BOOL, local_accuracy, worldSize,
