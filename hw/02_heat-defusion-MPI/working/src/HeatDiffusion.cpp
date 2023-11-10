@@ -12,7 +12,7 @@ using namespace std;
 using namespace std::chrono;
 
 #define ACCURACY 0.00001f
-#define DEFAULT_TEMPERATURE 128.0
+#define DEFAULT_TEMPERATURE 128
 #define GET_MAP(x, y) map[(x) + width * (y)]
 #define GET_MASK(x, y) mask[(x) + width * (y)]
 #define GET_TMP_MAP(x, y) tmp_map[(x) + width * (y)]
@@ -156,6 +156,13 @@ int main(int argc, char **argv)
          GET_MASK(i.mX, i.mY) = PERMANENT;
       }
 
+      // for (int y = 0; y < height; ++y) {
+      //    for (int x = 0; x < width; ++x) {
+      //       printf(" %2d", GET_MASK(x, y));
+      //    }
+      //    printf("\n");
+      // }
+
       do {
          achieved_accuracy = true;
          for (unsigned int i = 0; i < map.size(); ++i) {
@@ -214,7 +221,7 @@ int main(int argc, char **argv)
                   break;
                }
 
-               if (achieved_accuracy && (tmp_map[i] - map[i]) <= ACCURACY)
+               if (achieved_accuracy && abs(map[i] - tmp_map[i]) <= ACCURACY)
                   achieved_accuracy = true;
                else
                   achieved_accuracy = false;
@@ -226,11 +233,19 @@ int main(int argc, char **argv)
          // copy memmory
          map.assign(tmp_map.begin(), tmp_map.end());
 
+         // printf("\n\n\n");
+         // for (int y = 0; y < height; ++y) {
+         //    for (int x = 0; x < width; ++x) {
+         //       printf(" %3.0f", GET_MAP(x, y));
+         //    }
+         //    printf("\n");
+         // }
+
       } while (!achieved_accuracy);
 
       for (int y = 0; y < height; ++y) {
          for (int x = 0; x < width; ++x) {
-            printf(" %.2f", GET_MAP(x, y));
+            printf(" %3.0f", GET_MAP(x, y));
          }
          printf("\n");
       }
