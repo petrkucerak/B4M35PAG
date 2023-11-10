@@ -155,7 +155,7 @@ int main(int argc, char **argv)
          }
       }
       for (int i = 0; i < height * width; ++i)
-         l_map[i] = DEFAULT_TEMPERATURE;
+         map[i] = DEFAULT_TEMPERATURE;
       for (auto &i : spots) {
          GET_MAP(i.mX, i.mY) = i.mTemperature;
          GET_MASK(i.mX, i.mY) = PERMANENT;
@@ -166,17 +166,36 @@ int main(int argc, char **argv)
       //       printf(" %2d", GET_MASK(x, y));
       //    }
       //    printf("\n");
+      // }
+      // Print map
+      // for (int y = 0; y < height; ++y) {
+      //    for (int x = 0; x < width; ++x) {
+      //       printf(" %3.0f", GET_MAP(x, y));
+      //    }
+      //    printf("\n");
+      // }
    }
 
    MPI_Bcast(mask, width * height, MPI_INT, 0, MPI_COMM_WORLD);
-   float *lt_map = new float[width * height / worldSize];
-   float *l_map = new float[width * height / worldSize];
-   MPI_Scatter(map, width * height, MPI_FLOAT, l_map,
-               width * height / worldSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
+   float *lt_map = new float[width * height / worldSize + 2 * (width + 1)];
+   float *l_map = new float[width * height / worldSize + 2 * (width + 1)];
+   MPI_Scatter(map, width * height / worldSize, MPI_FLOAT, l_map + width,
+               worldSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
+   if (myRank == 0) {
+      for (int i = 0; i < width * height / worldSize + 2 * (width + 1); ++i) {
+         printf("%3.0f ", l_map[i]);
+      }
+      printf("\n");
+   }
+   MPI_Finalize();
+   return 0;
    do {
       achieved_accuracy = true;
-      for (unsigned int i = 0; i < width * height; ++i) {
+      for (unsigned int i = width; i < width * height / worldSize; ++i) {
          if (mask[i] != PERMANENT) {
+            // TODO: copy data out of the area
+            // local array [prew data (width + 1), section, next data (width +
+            // 1)]
             switch (mask[i]) {
             case LEFT_TOP:
                lt_map[i] =
