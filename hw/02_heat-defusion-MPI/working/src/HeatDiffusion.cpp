@@ -115,8 +115,8 @@ int main(int argc, char **argv)
    if (myRank == 0) {
       tie(width, height, spots) = readInstance(argv[1]);
    }
-   // MPI_Bcast(&width, 1, MPI_INT, 0, MPI_COMM_WORLD);
-   // MPI_Bcast(&height, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&height, 1, MPI_INT, 0, MPI_COMM_WORLD);
+   MPI_Bcast(&width, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
    high_resolution_clock::time_point start = high_resolution_clock::now();
 
@@ -125,7 +125,6 @@ int main(int argc, char **argv)
    // row-major order (see
    // https://en.wikipedia.org/wiki/Row-_and_column-major_order)
    float *map = new float[width * height];
-   float *tmp_map = new float[width * height];
    int *mask = new int[width * height];
    bool achieved_accuracy = false;
    if (myRank == 0) {
@@ -156,7 +155,7 @@ int main(int argc, char **argv)
          }
       }
       for (int i = 0; i < height * width; ++i)
-         map[i] = DEFAULT_TEMPERATURE;
+         l_map[i] = DEFAULT_TEMPERATURE;
       for (auto &i : spots) {
          GET_MAP(i.mX, i.mY) = i.mTemperature;
          GET_MASK(i.mX, i.mY) = PERMANENT;
@@ -169,76 +168,93 @@ int main(int argc, char **argv)
       //    printf("\n");
    }
 
-   // MPI_Bcast(map, width * height, MPI_FLOAT, 0, MPI_COMM_WORLD);
-   // MPI_Bcast(tmp_map, width * height, MPI_FLOAT, 0, MPI_COMM_WORLD);
-   // MPI_Bcast(mask, width * height, MPI_INT, 0, MPI_COMM_WORLD);
-
+   MPI_Bcast(mask, width * height, MPI_INT, 0, MPI_COMM_WORLD);
+   float *lt_map = new float[width * height / worldSize];
+   float *l_map = new float[width * height / worldSize];
+   MPI_Scatter(map, width * height, MPI_FLOAT, l_map,
+               width * height / worldSize, MPI_FLOAT, 0, MPI_COMM_WORLD);
    do {
       achieved_accuracy = true;
       for (unsigned int i = 0; i < width * height; ++i) {
          if (mask[i] != PERMANENT) {
             switch (mask[i]) {
             case LEFT_TOP:
-               tmp_map[i] = (map[0] + map[1] + map[width] + map[width + 1]) / 4;
+               lt_map[i] =
+                   (l_map[0] + l_map[1] + l_map[width] + l_map[width + 1]) / 4;
                break;
             case TOP:
-               tmp_map[i] =
-                   (map[i - 1] + map[i] + map[i + 1] + map[width - 1 + i] +
-                    map[width + i] + map[i + width + 1]) /
-                   6;
+               lt_map[i] = (l_map[i - 1] + l_map[i] + l_map[i + 1] +
+                            l_map[width - 1 + i] + l_map[width + i] +
+                            l_map[i + width + 1]) /
+                           6;
                break;
             case RIGHT_TOP:
-               tmp_map[i] =
-                   (map[i - 1] + map[i] + map[i + width - 1] + map[i + width]) /
-                   4;
+               lt_map[i] = (map[i - 1] + l_map[i] + l_map[i + width - 1] +
+                            l_map[i + width]) /
+                           4;
                break;
             case RIGHT:
-               tmp_map[i] = (map[i - width - 1] + map[i - width] + map[i - 1] +
-                             map[i] + map[i + width - 1] + map[i + width]) /
-                            6;
-               break;
-            case RIGHT_BOTTOM:
-               tmp_map[i] =
-                   (map[i - width - 1] + map[i - width] + map[i - 1] + map[i]) /
-                   4;
-               break;
-            case BOTTOM:
-               tmp_map[i] =
-                   (map[i - width - 1] + map[i - width] + map[i - width + 1] +
-                    map[i - 1] + map[i] + map[i + 1]) /
+               lt_map[i] =
+                   (map[i - width - 1] + l_map[i - width] + l_map[i - 1] +
+                    l_map[i] + l_map[i + width - 1] + l_map[i + width]) /
                    6;
                break;
+            case RIGHT_BOTTOM:
+               lt_map[i] = (map[i - width - 1] + l_map[i - width] +
+                            l_map[i - 1] + l_map[i]) /
+                           4;
+               break;
+            case BOTTOM:
+               lt_map[i] = (map[i - width - 1] + l_map[i - width] +
+                            l_map[i - width + 1] + l_map[i - 1] + l_map[i] +
+                            l_map[i + 1]) /
+                           6;
+               break;
             case LEFT_BOTTOM:
-               tmp_map[i] =
-                   (map[i - width] + map[i - width + 1] + map[i] + map[i + 1]) /
-                   4;
+               lt_map[i] = (map[i - width] + l_map[i - width + 1] + l_map[i] +
+                            l_map[i + 1]) /
+                           4;
                break;
             case LEFT:
-               tmp_map[i] = (map[i - width] + map[i - width + 1] + map[i] +
-                             map[i + 1] + map[i + width] + map[i + width + 1]) /
-                            6;
+               lt_map[i] =
+                   (map[i - width] + l_map[i - width + 1] + l_map[i] +
+                    l_map[i + 1] + l_map[i + width] + l_map[i + width + 1]) /
+                   6;
                break;
 
             default: // Normal
-               tmp_map[i] =
-                   (map[i - width - 1] + map[i - width] + map[i - width + 1] +
-                    map[i + 1] + map[i + width + 1] + map[i + width] +
-                    map[i + width - 1] + map[i - 1] + map[i]) /
-                   9;
+               lt_map[i] = (map[i - width - 1] + l_map[i - width] +
+                            l_map[i - width + 1] + l_map[i + 1] +
+                            l_map[i + width + 1] + l_map[i + width] +
+                            l_map[i + width - 1] + l_map[i - 1] + l_map[i]) /
+                           9;
                break;
             }
 
-            if (achieved_accuracy && abs(map[i] - tmp_map[i]) <= ACCURACY)
+            if (achieved_accuracy && abs(map[i] - lt_map[i]) <= ACCURACY)
                achieved_accuracy = true;
             else
                achieved_accuracy = false;
          } else { // permanent spots
-            tmp_map[i] = map[i];
+            lt_map[i] = l_map[i];
          }
       }
 
       // copy memmory
-      memcpy(map, tmp_map, height * width * sizeof(float));
+      memcpy(l_map, lt_map, height * width * sizeof(float));
+
+      if (myRank == 0) {
+         bool *accuracy_list = new bool[worldSize];
+         MPI_Gather(&achieved_accuracy, 1, MPI_CXX_BOOL, accuracy_list,
+                    worldSize, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
+         for (int i = 0; i < worldSize; ++i) {
+            if (accuracy_list[i] != true) {
+               achieved_accuracy = false;
+               break;
+            }
+         }
+      }
+      MPI_Bcast(&achieved_accuracy, 1, MPI_CXX_BOOL, 0, MPI_COMM_WORLD);
 
       // printf("\n\n\n");
       // for (int y = 0; y < height; ++y) {
@@ -269,7 +285,7 @@ int main(int argc, char **argv)
       writeOutput(myRank, width, height, outputFileName, map);
    }
 
-   delete[] map, mask, tmp_map;
+   delete[] map, mask, l_map, lt_map;
 
    MPI_Finalize();
    return 0;
