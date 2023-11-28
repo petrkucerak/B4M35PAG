@@ -1,0 +1,1 @@
+mpiexec -np 4 cmake/cmake-build-debug/MasterSlave
