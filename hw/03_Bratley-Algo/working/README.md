@@ -19,7 +19,7 @@ It might happen that unassigned task would miss its deadline when assigned to th
 
 *It is meaningless to continue, because in the future, some task would surely miss its deadline.*
 
-$(∃Tj ∈ V : max\{c, rj\} + pj > dj )$ => prune this node
+$(\forall T_j \in V : \max\{c, r_j\} + p_j > d_j )$ => prune this node
 
 - $c$ – length of the partial schedule
 - $V$ – a set of non-scheduled tasks
@@ -28,7 +28,7 @@ $(∃Tj ∈ V : max\{c, rj\} + pj > dj )$ => prune this node
 
 We might have already found some feasible solution, which might not be optimal. However, we can use its quality as an upper bound (`UB`). We can calculate lover bound (`LB`) of the current solution and prune this node if `LB ≥ UB`.
 
-$LB = max\{c, \min_{T_j \in V}\{r_j\}\} + \sum_{T_j \in V}{p_j}$
+$LB = \max\{c, \min_{T_j \in V}\{r_j\}\} + \sum_{T_j \in V}{p_j}$
 
 - $c$ – length of the partial schedule
 - $V$ – a set of non-scheduled tasks
