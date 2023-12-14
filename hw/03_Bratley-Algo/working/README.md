@@ -6,7 +6,7 @@
 cmake * # install dependecies
 make # compile binnary
 mpirun -np 4 ./Main # run binary woth mpi
-make && mpirun -np 4 ./Main # compile binay and run it
+cmake && make && mpirun -np 4 ./Main # compile binay and run it
 ```
 
 ## 2 Assigement
