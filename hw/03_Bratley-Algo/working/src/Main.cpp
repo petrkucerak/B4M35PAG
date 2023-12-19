@@ -95,10 +95,8 @@ int main(int argc, char **argv)
          deque.pop_front();
 
          // 1. test practicability of this element
-         int timestamp =
-             (node.timestamp >= task.release_time ? node.timestamp
-                                                  : task.release_time) +
-             task.process_time; // end of current task
+         int timestamp = max(node.timestamp, task.release_time) +
+                         task.process_time; // end of current task
          // cout << node.task_id << "(" << timestamp << ")[" << node.depth <<
          // "]"
          //      << endl;
