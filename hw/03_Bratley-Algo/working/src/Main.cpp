@@ -37,7 +37,7 @@ void addChildrens(deque<Node> &deque, vector<Task> &tasks, int depth,
 {
    int already_added = 0;
    int new_children_count = tasks.size() - depth;
-   while (already_added < new_children_count) {
+   while (already_added <= new_children_count) {
       task_id != tasks.size() - 1 ? ++task_id : task_id = 0;
       deque.push_back({task_id, timestamp, depth + 1});
       ++already_added;
@@ -55,6 +55,7 @@ int main(int argc, char **argv)
    if (!rank) {
       // Load the metadata
       bool exits_solution = false;
+      int best_solution = INT32_MAX;
       int task_count;
       if (scanf("%d\n", &task_count) != 1) {
          fprintf(stderr, "Can't load the task count\n");
@@ -63,6 +64,7 @@ int main(int argc, char **argv)
       }
 
       vector<Task> tasks;
+      deque<Node> deque;
       tasks.reserve(task_count);
 
       // Load the data
@@ -76,14 +78,11 @@ int main(int argc, char **argv)
          }
          // if deadline - process_time < release_time cause error
          if (process_time + release_time > deadline)
-            cout << "-1" << endl;
-         break;
+            goto INCORRECT;
          tasks.push_back({process_time, release_time, deadline});
       }
 
       // print_tasks(tasks);
-
-      deque<Node> deque;
       // Add first level to the end of deque
       for (int i = 0; i < tasks.size(); ++i) {
          deque.push_back({i, 0, 1});
@@ -100,25 +99,30 @@ int main(int argc, char **argv)
              (node.timestamp >= task.release_time ? node.timestamp
                                                   : task.release_time) +
              task.process_time; // end of current task
-         // cout << node.task_id << "(" << timestamp << ")" << endl;
+         // cout << node.task_id << "(" << timestamp << ")[" << node.depth <<
+         // "]"
+         //      << endl;
          // Missed deadline
          if (timestamp > task.deadline)
             continue;
 
          // Detect the end of timestamp
          if (node.depth == task_count) {
-            cout << "TASK COUNT: " << task_count << endl;
-            cout << "NOW" << endl;
-            cout << "T: " << node.task_id << " D: " << node.depth << endl;
             exits_solution = true;
+            if (timestamp < best_solution)
+               best_solution = timestamp;
          }
 
          // 2. add its children
          addChildrens(deque, tasks, node.depth, node.task_id, timestamp);
       }
 
-      if (!exits_solution)
+      if (!exits_solution) {
+      INCORRECT:
          cout << "-1" << endl;
+      } else
+         cout << "The best solution is process with time: " << best_solution
+              << endl;
    }
 
    // cout << "Hello wordl from node " << rank << "!" << endl;
