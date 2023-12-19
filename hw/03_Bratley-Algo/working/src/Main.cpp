@@ -1,6 +1,7 @@
 #include <deque>
 #include <iostream>
 #include <mpi.h>
+#include <queue>
 #include <vector>
 
 #define UNDEFINED -1
@@ -53,7 +54,7 @@ int main(int argc, char **argv)
 
    if (!rank) {
       // Load the metadata
-      bool is_find_solution = false;
+      bool is_solution = false;
       int task_count;
       if (scanf("%d\n", &task_count) != 1) {
          fprintf(stderr, "Can't load the task count\n");
@@ -73,11 +74,14 @@ int main(int argc, char **argv)
             MPI_Finalize();
             exit(EXIT_FAILURE);
          }
+         // if deadline - process_time < release_time cause error
+         if (process_time + release_time > deadline)
+            cout << "-1" << endl;
+         break;
          tasks.push_back({process_time, release_time, deadline});
       }
 
       // TODO: handle if task is real,
-      // if deadline - process_time < release_time cause error
 
       // print_tasks(tasks);
 
@@ -104,18 +108,18 @@ int main(int argc, char **argv)
 
          // Detect the end of timestamp
          if (node.depth == task_count) {
-            is_find_solution = true;
+            is_solution = true;
          }
 
          // 2. add its children
          addChildrens(deque, tasks, node.depth, node.task_id, timestamp);
       }
 
-      if (!is_find_solution)
+      if (!is_solution)
          cout << "-1" << endl;
    }
 
-   cout << "Hello wordl from node " << rank << "!" << endl;
+   // cout << "Hello wordl from node " << rank << "!" << endl;
 
    MPI_Finalize();
    return 0;
