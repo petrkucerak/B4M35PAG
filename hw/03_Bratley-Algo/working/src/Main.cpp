@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 
    if (!rank) {
       // Load the metadata
-      bool is_solution = false;
+      bool exits_solution = false;
       int task_count;
       if (scanf("%d\n", &task_count) != 1) {
          fprintf(stderr, "Can't load the task count\n");
@@ -81,8 +81,6 @@ int main(int argc, char **argv)
          tasks.push_back({process_time, release_time, deadline});
       }
 
-      // TODO: handle if task is real,
-
       // print_tasks(tasks);
 
       deque<Node> deque;
@@ -99,23 +97,27 @@ int main(int argc, char **argv)
 
          // 1. test practicability of this element
          int timestamp =
-             node.timestamp >= task.release_time
-                 ? node.timestamp
-                 : task.release_time + task.process_time; // end of current task
+             (node.timestamp >= task.release_time ? node.timestamp
+                                                  : task.release_time) +
+             task.process_time; // end of current task
+         // cout << node.task_id << "(" << timestamp << ")" << endl;
          // Missed deadline
          if (timestamp > task.deadline)
             continue;
 
          // Detect the end of timestamp
          if (node.depth == task_count) {
-            is_solution = true;
+            cout << "TASK COUNT: " << task_count << endl;
+            cout << "NOW" << endl;
+            cout << "T: " << node.task_id << " D: " << node.depth << endl;
+            exits_solution = true;
          }
 
          // 2. add its children
          addChildrens(deque, tasks, node.depth, node.task_id, timestamp);
       }
 
-      if (!is_solution)
+      if (!exits_solution)
          cout << "-1" << endl;
    }
 
