@@ -32,26 +32,21 @@ bool isAlwaysSlower(const vector<Task> &tasks, int start_time, int best_time)
    for (auto &task : tasks) {
       potencial_best_time += task.process_time;
    }
-   return best_time < potencial_best_time ? true : false;
+   return best_time < potencial_best_time;
 }
 
-bool isReleaseLater(vector<Task> tasks, int start_time)
+bool isReleaseLater(const vector<Task> &tasks, int start_time)
 {
    bool ret = true;
-   for (auto &task : tasks)
+   for (const auto &task : tasks)
       if (task.release_time < start_time)
          return false;
    return ret;
 }
 
-bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
+bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
                       int &best_time, bool &best_base)
 {
-   // for (auto &task : tasks)
-   //    printf("[%d %d %d] ", task.process_time, task.release_time,
-   //           task.deadline);
-   // printf("\n");
-
    // 1. CONDITION: Missing deadline
    if (!catchDeadline(tasks, start_time))
       return false;
@@ -77,10 +72,8 @@ bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
       new_tasks.erase(new_tasks.begin() + i);
 
       // 2. CONDITION: Bound on the solution
-      if (ret) {
-         if (isAlwaysSlower(new_tasks, start_time, best_time))
-            continue;
-      }
+      if (ret && isAlwaysSlower(new_tasks, start_time, best_time))
+         continue;
 
       bool status = bratleyAlgorithm(new_tasks, order,
                                      max(start_time, tasks[i].release_time) +
@@ -149,7 +142,12 @@ int main(int argc, char **argv)
          tasks.push_back({i, process_time, release_time, deadline});
       }
 
-      // TODO: sort tasks vector
+      // Sort tasks based on release times
+      // TODO: sort tasks vector?
+      sort(tasks.begin(), tasks.end(), [](const Task &a, const Task &b) {
+         return a.release_time < b.release_time;
+      });
+
       bool best_base = false;
       if (!bratleyAlgorithm(tasks, order, 0, best_time, best_base))
          outputFile << "-1" << endl;
