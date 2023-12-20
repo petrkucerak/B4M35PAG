@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <climits>
 #include <fstream>
 #include <iostream>
 #include <mpi.h>
@@ -9,10 +10,10 @@ using namespace std;
 #define TASK tasks[depth]
 
 struct Task {
-   int task_id;
-   int process_time;
-   int release_time;
-   int deadline;
+   unsigned int task_id;
+   unsigned int process_time;
+   unsigned int release_time;
+   unsigned int deadline;
 };
 
 bool compareTasks(const Task &task1, const Task &task2)
@@ -35,7 +36,8 @@ void taskSwap(Task &a, Task &b)
    b = temp;
 }
 
-bool catchDeadline(vector<Task> tasks, int start_time, int depth)
+bool catchDeadline(vector<Task> tasks, unsigned int start_time,
+                   unsigned int depth)
 {
    while (depth < tasks.size()) {
       if (TASK.process_time + start_time > TASK.deadline)
@@ -45,8 +47,8 @@ bool catchDeadline(vector<Task> tasks, int start_time, int depth)
    return true;
 }
 
-bool isAlwaysSlower(vector<Task> &tasks, int start_time, int depth,
-                    int best_time)
+bool isAlwaysSlower(vector<Task> &tasks, unsigned int start_time,
+                    unsigned int depth, unsigned int best_time)
 {
    while (depth < tasks.size()) {
       start_time += TASK.process_time;
@@ -55,7 +57,8 @@ bool isAlwaysSlower(vector<Task> &tasks, int start_time, int depth,
    return best_time < start_time;
 }
 
-bool isReleaseLater(vector<Task> &tasks, int start_time, int depth)
+bool isReleaseLater(vector<Task> &tasks, unsigned int start_time,
+                    unsigned int depth)
 {
    while (depth < tasks.size()) {
       if (TASK.release_time < start_time)
@@ -65,40 +68,41 @@ bool isReleaseLater(vector<Task> &tasks, int start_time, int depth)
    return true;
 }
 
-void bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
-                      int &best_time, int depth, bool &is_best,
-                      bool &skip_parents)
+void bratleyAlgorithm(vector<Task> &tasks, vector<int> &order,
+                      unsigned int start_time, unsigned int &best_time,
+                      unsigned int depth, bool &is_best, bool &skip_parents)
 {
+   // 1. CONDITION: Missing deadline
+   if (!catchDeadline(tasks, start_time, depth)) {
+      // cout << "Missing deadline" << endl;
+      return;
+   }
+
+   // 2. CONDITION: Bound on the solution
+   if (is_best && isAlwaysSlower(tasks, start_time, depth, best_time)) {
+      cout << "2. condition" << endl;
+      return;
+   }
    bool is_best_tmp = false;
    for (int i = 0; i < tasks.size() - depth; ++i) {
       // swap
       taskSwap(tasks[depth], tasks[depth + i]);
-
-      // 1. CONDITION: Missing deadline
-      if (!catchDeadline(tasks, start_time, depth)) {
-         taskSwap(tasks[depth + i], tasks[depth]);
-         continue;
-      }
-
-      // 2. CONDITION: Bound on the solution
-      if (is_best_tmp && isAlwaysSlower(tasks, start_time, depth, best_time)) {
-         taskSwap(tasks[depth + i], tasks[depth]);
-         continue;
-      }
 
       // get end time
       const int end_time =
           max(TASK.release_time, start_time) + TASK.process_time;
 
       if (tasks.size() - depth == 1) {
-         if (start_time < best_time) {
+         if (end_time < best_time) {
             // cout << "Last element: " << TASK.task_id << endl;
-            // cout << "with time: " << start_time << endl << endl;
-            best_time = start_time;
+            // cout << "with time: " << end_time << endl << endl;
+            best_time = end_time;
             is_best_tmp = true;
             order[TASK.task_id] = max(TASK.release_time, start_time);
          }
          taskSwap(tasks[depth], tasks[depth + i]);
+         continue;
+         ;
       }
 
       // run the new step of bratley algorithm
@@ -116,8 +120,10 @@ void bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
          break;
    }
    // 3. CONDITION: Decomposition
-   if (!skip_parents && isReleaseLater(tasks, start_time, depth))
+   if (!skip_parents && isReleaseLater(tasks, start_time, depth)) {
+      cout << "3. condition" << endl;
       skip_parents = true;
+   }
    is_best = is_best_tmp;
 }
 
@@ -145,7 +151,7 @@ int main(int argc, char **argv)
       vector<Task> tasks;
       vector<int> order(task_count);
       tasks.reserve(task_count);
-      int best_time = INT32_MAX;
+      unsigned int best_time = UINT32_MAX;
 
       // Open the output file
       ofstream outputFile(argv[2]);
@@ -155,8 +161,8 @@ int main(int argc, char **argv)
       }
 
       // Load the data from the file
-      for (int i = 0; i < task_count; ++i) {
-         int process_time, release_time, deadline;
+      for (unsigned int i = 0; i < task_count; ++i) {
+         unsigned int process_time, release_time, deadline;
          if (!(inputFile >> process_time >> release_time >> deadline)) {
             fprintf(stderr, "Can't load a task from file.\n");
             goto FIASKO;
@@ -171,7 +177,6 @@ int main(int argc, char **argv)
       }
 
       // Sort tasks based on release times
-      // TODO: sort tasks vector?
       sort(tasks.begin(), tasks.end(), compareTasks);
 
       bool is_best = false;
