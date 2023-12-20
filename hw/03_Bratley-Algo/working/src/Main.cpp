@@ -5,7 +5,7 @@
 #include <vector>
 
 #define UNDEFINED -1
-#define LAST_TASK tasks[0]
+#define LAST_TASK tasks[tasks.size() - 1]
 
 using namespace std;
 
@@ -16,50 +16,60 @@ struct Task {
    int deadline;
 };
 
-bool catchDeadline(const vector<Task> &tasks, int start_time)
+bool catchDeadline(const vector<Task> &tasks, int start_time, int n)
 {
-   for (const auto &task : tasks) {
-      if (task.process_time + start_time > task.deadline)
+   for (int i = 0; i < tasks.size() - n; ++i)
+      if (tasks[i].process_time + start_time > tasks[i].deadline)
          return false;
-   }
    return true;
 }
 
-bool isAlwaysSlower(const vector<Task> &tasks, int start_time, int best_time)
+bool isAlwaysSlower(const vector<Task> &tasks, int start_time, int best_time,
+                    int start_task_id)
 {
 
    int potencial_best_time = start_time;
-   for (auto &task : tasks) {
-      potencial_best_time += task.process_time;
-   }
+   for (int i = start_task_id; i < tasks.size(); ++i)
+      potencial_best_time += tasks[i].process_time;
+
    return best_time < potencial_best_time;
 }
 
-bool isReleaseLater(const vector<Task> &tasks, int start_time)
+bool isReleaseLater(const vector<Task> &tasks, int start_time,
+                    int start_task_id)
 {
    bool ret = true;
-   for (const auto &task : tasks)
-      if (task.release_time < start_time)
+   for (int i = start_task_id; i < tasks.size(); ++i)
+      if (tasks[i].release_time < start_time)
          return false;
    return ret;
 }
+void swap(int &a, int &b)
+{
+   int temp = a;
+   a = b;
+   b = temp;
+}
 
+// TODO: use swap
 bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
-                      int &best_time, bool &best_base)
+                      int &best_time, bool &best_base, int n)
 {
    // 1. CONDITION: Missing deadline
-   if (!catchDeadline(tasks, start_time))
-      return false;
+   // if (!catchDeadline(tasks, start_time, n))
+   //    return false;
 
-   if (tasks.size() == 1) {
-      int time =
-          max(start_time, LAST_TASK.release_time) + LAST_TASK.process_time;
-      // cout << "Find solution with time: " << time << endl;
+   if (n == 0) {
+      // cout << "Find solution with time: " << start_time << endl;
+
+      // for (auto &task : tasks)
+      //    cout << task.task_id << " ";
+      // cout << endl;
 
       // if the task is new best time
-      if (time < best_time) {
-         best_time = time;
-         order[LAST_TASK.task_id] = max(start_time, LAST_TASK.release_time);
+      if (start_time < best_time) {
+         best_time = start_time;
+         order[LAST_TASK.task_id] = start_time - LAST_TASK.process_time;
          return true;
       } else {
          return false;
@@ -67,27 +77,31 @@ bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
    }
 
    bool ret = false;
-   for (int i = 0; i < tasks.size(); ++i) {
-      vector<Task> new_tasks = tasks;
-      new_tasks.erase(new_tasks.begin() + i);
+   const int task_id = tasks.size() - n;
+   for (int i = 0; i < n; ++i) {
+      swap(tasks[task_id], tasks[task_id + i]); // TODO: replace by vector swap
 
       // 2. CONDITION: Bound on the solution
-      if (ret && isAlwaysSlower(new_tasks, start_time, best_time))
+      if (ret && isAlwaysSlower(tasks, start_time, best_time, task_id)) {
+         swap(tasks[task_id + i], tasks[task_id]);
          continue;
-
-      bool status = bratleyAlgorithm(new_tasks, order,
-                                     max(start_time, tasks[i].release_time) +
-                                         tasks[i].process_time,
-                                     best_time, best_base);
+      }
+      bool status =
+          bratleyAlgorithm(tasks, order,
+                           max(start_time, tasks[task_id].release_time) +
+                               tasks[task_id].process_time,
+                           best_time, best_base, n - 1);
       if (status) {
-         order[tasks[i].task_id] = max(start_time, tasks[i].release_time);
+         order[tasks[task_id].task_id] =
+             max(start_time, tasks[task_id].release_time);
          ret = true;
       }
+      swap(tasks[task_id + i], tasks[task_id]);
       if (best_base)
          break;
    }
    // 3. CONDITION: Decomposition
-   if (isReleaseLater(tasks, start_time)) {
+   if (isReleaseLater(tasks, start_time, task_id)) {
       best_base = true;
    }
    return ret;
@@ -149,11 +163,14 @@ int main(int argc, char **argv)
       });
 
       bool best_base = false;
-      if (!bratleyAlgorithm(tasks, order, 0, best_time, best_base))
+      if (!bratleyAlgorithm(tasks, order, 0, best_time, best_base, task_count))
          outputFile << "-1" << endl;
       else
          for (auto &task : order)
             outputFile << task << endl;
+
+      for (auto &task : order)
+         cout << task << endl;
    }
 END:
    MPI_Finalize();
