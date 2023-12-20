@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <vector>
 
@@ -8,6 +9,15 @@ struct Task {
    int release_time;
    int deadline;
 };
+
+void bratleyAlgorithm(vector<Task> tasks)
+{
+   for (int i = 0; i < tasks.size() - 1; ++i) {
+      vector<Task> new_tasks = tasks;
+      new_tasks.erase(new_tasks.begin() + i);
+      bratleyAlgorithm(new_tasks);
+   }
+}
 
 int main(int argc, char const *argv[])
 {
@@ -34,6 +44,8 @@ int main(int argc, char const *argv[])
       }
       tasks.push_back({process_time, release_time, deadline});
    }
+
+   bratleyAlgorithm(tasks);
 
    return 0;
 }
