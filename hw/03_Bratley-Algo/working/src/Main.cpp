@@ -96,6 +96,13 @@ int main(int argc, char **argv)
       tasks.reserve(task_count);
       int best_time = INT32_MAX;
 
+      // Open the output file
+      ofstream outputFile(argv[2]);
+      if (!outputFile.is_open()) {
+         fprintf(stderr, "Error opening the output file: %s\n", argv[2]);
+         goto FIASKO;
+      }
+
       // Load the data from the file
       for (int i = 0; i < task_count; ++i) {
          int process_time, release_time, deadline;
@@ -105,18 +112,18 @@ int main(int argc, char **argv)
          }
          // if deadline - process_time < release_time cause error
          if (process_time + release_time > deadline) {
-            cout << "-1" << endl;
+            outputFile << "-1" << endl;
             goto END;
          }
          tasks.push_back({i, process_time, release_time, deadline});
       }
 
       if (!bratleyAlgorithm(tasks, order, 0, best_time))
-         printf("-1\n");
+         outputFile << "-1" << endl;
       else
          for (auto &task : order)
-            printf("%d\n", task);
-   }
+            outputFile << task << endl;
+      }
 END:
    MPI_Finalize();
    return 0;
