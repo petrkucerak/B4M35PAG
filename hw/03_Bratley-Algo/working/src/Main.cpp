@@ -134,6 +134,8 @@ int main(int argc, char **argv)
          tasks.push_back({i, process_time, release_time, deadline});
       }
 
+      // TODO: sort tasks vector
+
       if (!bratleyAlgorithm(tasks, order, 0, best_time))
          outputFile << "-1" << endl;
       else
