@@ -16,16 +16,16 @@ struct Task {
    int deadline;
 };
 
-bool catchDeadline(vector<Task> tasks, int start_time)
+bool catchDeadline(const vector<Task> &tasks, int start_time)
 {
-   for (auto &task : tasks) {
+   for (const auto &task : tasks) {
       if (task.process_time + start_time > task.deadline)
          return false;
    }
    return true;
 }
 
-bool isAlwaysSlower(vector<Task> tasks, int start_time, int best_time)
+bool isAlwaysSlower(const vector<Task> &tasks, int start_time, int best_time)
 {
 
    int potencial_best_time = start_time;
@@ -52,6 +52,10 @@ bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
    //           task.deadline);
    // printf("\n");
 
+   // 1. CONDITION: Missing deadline
+   if (!catchDeadline(tasks, start_time))
+      return false;
+
    if (tasks.size() == 1) {
       int time =
           max(start_time, LAST_TASK.release_time) + LAST_TASK.process_time;
@@ -71,10 +75,6 @@ bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
    for (int i = 0; i < tasks.size(); ++i) {
       vector<Task> new_tasks = tasks;
       new_tasks.erase(new_tasks.begin() + i);
-
-      // 1. CONDITION: Missing deadline
-      if (!catchDeadline(new_tasks, start_time))
-         continue;
 
       // 2. CONDITION: Bound on the solution
       if (ret) {
