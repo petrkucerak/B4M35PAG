@@ -32,6 +32,16 @@ bool catchDeadline(vector<Task> tasks, int start_time, int depth)
    return true;
 }
 
+bool isAlwaysSlower(vector<Task> &tasks, int start_time, int depth,
+                    int best_time)
+{
+   while (depth < tasks.size()) {
+      start_time += TASK.process_time;
+      ++depth;
+   }
+   return best_time < start_time;
+}
+
 void bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
                       int &best_time, int depth, bool &is_best)
 {
@@ -51,6 +61,12 @@ void bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
 
       // 1. CONDITION: Missing deadline
       if (!catchDeadline(tasks, start_time, depth)) {
+         taskSwap(tasks[depth + i], tasks[depth]);
+         continue;
+      }
+
+      // 2. CONDITION: Bound on the solution
+      if (is_best_tmp && isAlwaysSlower(tasks, start_time, depth, best_time)) {
          taskSwap(tasks[depth + i], tasks[depth]);
          continue;
       }
