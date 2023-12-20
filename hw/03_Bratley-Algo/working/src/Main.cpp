@@ -35,8 +35,17 @@ bool isAlwaysSlower(vector<Task> tasks, int start_time, int best_time)
    return best_time < potencial_best_time ? true : false;
 }
 
+bool isReleaseLater(vector<Task> tasks, int start_time)
+{
+   bool ret = true;
+   for (auto &task : tasks)
+      if (task.release_time < start_time)
+         return false;
+   return ret;
+}
+
 bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
-                      int &best_time)
+                      int &best_time, bool &best_base)
 {
    // for (auto &task : tasks)
    //    printf("[%d %d %d] ", task.process_time, task.release_time,
@@ -47,7 +56,6 @@ bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
    if (!catchDeadline(tasks, start_time))
       return false;
 
-   // 3. condition
    if (tasks.size() == 1) {
       int time =
           max(start_time, LAST_TASK.release_time) + LAST_TASK.process_time;
@@ -62,6 +70,7 @@ bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
          return false;
       }
    }
+
    bool ret = false;
    for (int i = 0; i < tasks.size(); ++i) {
       vector<Task> new_tasks = tasks;
@@ -76,11 +85,17 @@ bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
       bool status = bratleyAlgorithm(new_tasks, order,
                                      max(start_time, tasks[i].release_time) +
                                          tasks[i].process_time,
-                                     best_time);
+                                     best_time, best_base);
       if (status) {
          order[tasks[i].task_id] = max(start_time, tasks[i].release_time);
          ret = true;
       }
+      if (best_base)
+         break;
+   }
+   // 3. CONDITION: Decomposition
+   if (isReleaseLater(tasks, start_time)) {
+      best_base = true;
    }
    return ret;
 }
@@ -135,8 +150,8 @@ int main(int argc, char **argv)
       }
 
       // TODO: sort tasks vector
-
-      if (!bratleyAlgorithm(tasks, order, 0, best_time))
+      bool best_base = false;
+      if (!bratleyAlgorithm(tasks, order, 0, best_time, best_base))
          outputFile << "-1" << endl;
       else
          for (auto &task : order)
