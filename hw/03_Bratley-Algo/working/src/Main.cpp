@@ -25,6 +25,16 @@ bool catchDeadline(vector<Task> tasks, int start_time)
    return true;
 }
 
+bool isAlwaysSlower(vector<Task> tasks, int start_time, int best_time)
+{
+
+   int potencial_best_time = start_time;
+   for (auto &task : tasks) {
+      potencial_best_time += task.process_time;
+   }
+   return best_time < potencial_best_time ? true : false;
+}
+
 bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
                       int &best_time)
 {
@@ -33,10 +43,10 @@ bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
    //           task.deadline);
    // printf("\n");
 
-   // 1. Missing deadline
+   // 1. CONDITION: Missing deadline
    if (!catchDeadline(tasks, start_time))
       return false;
-   // 2. condition
+
    // 3. condition
    if (tasks.size() == 1) {
       int time =
@@ -56,6 +66,12 @@ bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
    for (int i = 0; i < tasks.size(); ++i) {
       vector<Task> new_tasks = tasks;
       new_tasks.erase(new_tasks.begin() + i);
+
+      // 2. CONDITION: Bound on the solution
+      if (ret) {
+         if (isAlwaysSlower(new_tasks, start_time, best_time))
+            continue;
+      }
 
       bool status = bratleyAlgorithm(new_tasks, order,
                                      max(start_time, tasks[i].release_time) +
