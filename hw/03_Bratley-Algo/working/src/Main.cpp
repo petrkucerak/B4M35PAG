@@ -123,7 +123,7 @@ int main(int argc, char **argv)
       else
          for (auto &task : order)
             outputFile << task << endl;
-      }
+   }
 END:
    MPI_Finalize();
    return 0;
