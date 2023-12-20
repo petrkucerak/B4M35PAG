@@ -32,13 +32,19 @@ bool catchDeadline(vector<Task> tasks, int start_time, int depth)
    return true;
 }
 
-void bratleyAlgorithm(vector<Task> &tasks, vector<int> order, int start_time,
-                      int &best_time, int depth)
+void bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
+                      int &best_time, int depth, bool &is_best)
 {
    if (depth == tasks.size()) {
-      cout << "Last element: " << TASK.task_id << endl;
-      cout << "with time: " << start_time << endl << endl;
+      if (start_time < best_time) {
+         // cout << "Last element: " << TASK.task_id << endl;
+         // cout << "with time: " << start_time << endl << endl;
+         best_time = start_time;
+         is_best = true;
+      }
+      return;
    }
+   bool is_best_tmp = false;
    for (int i = 0; i < tasks.size() - depth; ++i) {
       // swap
       taskSwap(tasks[depth], tasks[depth + i]);
@@ -54,11 +60,17 @@ void bratleyAlgorithm(vector<Task> &tasks, vector<int> order, int start_time,
           max(TASK.release_time, start_time) + TASK.process_time;
 
       // run the new step of bratley algorithm
-      bratleyAlgorithm(tasks, order, end_time, best_time, depth + 1);
+      bratleyAlgorithm(tasks, order, end_time, best_time, depth + 1, is_best);
+      if (is_best) {
+         is_best_tmp = true;
+         order[TASK.task_id] = max(TASK.release_time, start_time);
+      }
+      is_best = false;
 
       // swap back
       taskSwap(tasks[depth + i], tasks[depth]);
    }
+   is_best = is_best_tmp;
 }
 
 int main(int argc, char **argv)
@@ -104,6 +116,7 @@ int main(int argc, char **argv)
          // if deadline - process_time < release_time cause error
          if (process_time + release_time > deadline) {
             outputFile << "-1" << endl;
+            cout << "-1" << endl;
             goto END;
          }
          tasks.push_back({i, process_time, release_time, deadline});
@@ -115,7 +128,17 @@ int main(int argc, char **argv)
       //    return a.release_time < b.release_time;
       // });
 
-      bratleyAlgorithm(tasks, order, 0, best_time, 0);
+      bool is_best = false;
+      bratleyAlgorithm(tasks, order, 0, best_time, 0, is_best);
+      if (is_best) {
+         for (auto &task : order)
+            outputFile << task << endl;
+         for (auto &task : order)
+            cout << task << endl;
+      } else {
+         outputFile << "-1" << endl;
+         cout << "-1" << endl;
+      }
    }
 END:
    MPI_Finalize();
