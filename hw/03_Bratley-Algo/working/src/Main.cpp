@@ -1,5 +1,7 @@
 #include <algorithm>
+#include <fstream>
 #include <iostream>
+#include <mpi.h>
 #include <vector>
 
 #define UNDEFINED -1
@@ -67,39 +69,58 @@ bool bratleyAlgorithm(vector<Task> tasks, vector<int> &order, int start_time,
    return ret;
 }
 
-int main(int argc, char const *argv[])
+int main(int argc, char **argv)
 {
-   int task_count;
-   if (scanf("%d\n", &task_count) != 1) {
-      fprintf(stderr, "Can't load the task count\n");
-      exit(EXIT_FAILURE);
-   }
+   // Initialize MPI
+   MPI_Init(&argc, &argv);
+   int world_size, rank;
+   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   if (!rank) {
 
-   vector<Task> tasks;
-   vector<int> order(task_count);
-   tasks.reserve(task_count);
-   int best_time = INT32_MAX;
-
-   // Load the data
-   for (int i = 0; i < task_count; ++i) {
-      int process_time, release_time, deadline;
-      if (scanf("%d %d %d\n", &process_time, &release_time, &deadline) != 3) {
-         fprintf(stderr, "Can't load a task\n");
-         exit(EXIT_FAILURE);
+      // Open the file
+      ifstream inputFile(argv[1]);
+      if (!inputFile.is_open()) {
+         fprintf(stderr, "Error opening the file: %s\n", argv[1]);
+         goto FIASKO;
       }
-      // if deadline - process_time < release_time cause error
-      if (process_time + release_time > deadline) {
-         cout << "-1" << endl;
-         return 0;
+
+      int task_count;
+      if (!(inputFile >> task_count)) {
+         fprintf(stderr, "Can't load the task count from file.\n");
+         goto FIASKO;
       }
-      tasks.push_back({i, process_time, release_time, deadline});
+
+      vector<Task> tasks;
+      vector<int> order(task_count);
+      tasks.reserve(task_count);
+      int best_time = INT32_MAX;
+
+      // Load the data from the file
+      for (int i = 0; i < task_count; ++i) {
+         int process_time, release_time, deadline;
+         if (!(inputFile >> process_time >> release_time >> deadline)) {
+            fprintf(stderr, "Can't load a task from file.\n");
+            goto FIASKO;
+         }
+         // if deadline - process_time < release_time cause error
+         if (process_time + release_time > deadline) {
+            cout << "-1" << endl;
+            goto END;
+         }
+         tasks.push_back({i, process_time, release_time, deadline});
+      }
+
+      if (!bratleyAlgorithm(tasks, order, 0, best_time))
+         printf("-1\n");
+      else
+         for (auto &task : order)
+            printf("%d\n", task);
    }
-
-   if (!bratleyAlgorithm(tasks, order, 0, best_time))
-      printf("-1\n");
-   else
-      for (auto &task : order)
-         printf("%d\n", task);
-
+END:
+   MPI_Finalize();
    return 0;
+FIASKO:
+   MPI_Finalize();
+   return 1;
 }
