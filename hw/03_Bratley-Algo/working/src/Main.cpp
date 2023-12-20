@@ -69,15 +69,6 @@ void bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
                       int &best_time, int depth, bool &is_best,
                       bool &skip_parents)
 {
-   if (depth == tasks.size()) {
-      if (start_time < best_time) {
-         // cout << "Last element: " << TASK.task_id << endl;
-         // cout << "with time: " << start_time << endl << endl;
-         best_time = start_time;
-         is_best = true;
-      }
-      return;
-   }
    bool is_best_tmp = false;
    for (int i = 0; i < tasks.size() - depth; ++i) {
       // swap
@@ -98,6 +89,17 @@ void bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
       // get end time
       const int end_time =
           max(TASK.release_time, start_time) + TASK.process_time;
+
+      if (tasks.size() - depth == 1) {
+         if (start_time < best_time) {
+            // cout << "Last element: " << TASK.task_id << endl;
+            // cout << "with time: " << start_time << endl << endl;
+            best_time = start_time;
+            is_best_tmp = true;
+            order[TASK.task_id] = max(TASK.release_time, start_time);
+         }
+         taskSwap(tasks[depth], tasks[depth + i]);
+      }
 
       // run the new step of bratley algorithm
       bratleyAlgorithm(tasks, order, end_time, best_time, depth + 1, is_best,
