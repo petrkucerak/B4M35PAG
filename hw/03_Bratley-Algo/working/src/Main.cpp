@@ -66,7 +66,7 @@ bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
       // cout << "Missing deadline" << endl;
       return skip_parents;
    }
-   // 2. CONDITION: Bound on the solution
+   // 2. CONDITION: Bound on the solution, inspiration by Petr
    int count_process_time = 0;
    int sooner_release_time = 0;
    int best_release_time = 0;
@@ -187,11 +187,11 @@ int main(int argc, char **argv)
       if (!best_order.empty()) {
          for (auto &task : best_order)
             outputFile << task << endl;
-         // for (auto &task : best_order)
-         //    cout << task << endl;
+         for (auto &task : best_order)
+            cout << task << endl;
       } else {
          outputFile << "-1" << endl;
-         // cout << "-1" << endl;
+         cout << "-1" << endl;
       }
    }
 END:
