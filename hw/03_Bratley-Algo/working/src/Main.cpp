@@ -16,6 +16,8 @@ struct Task {
    int deadline;
 };
 
+vector<int> best_order;
+
 bool compareTasks(const Task &task1, const Task &task2)
 {
    // First, compare by deadline
@@ -57,7 +59,7 @@ bool isReleaseLater(vector<Task> &tasks, int start_time, int depth)
 }
 
 bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
-                      int depth, int &best_time, vector<int> &best_order)
+                      int depth, int &best_time)
 {
    bool skip_parents = false;
    if (depth == tasks.size()) {
@@ -119,8 +121,8 @@ bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
           max(TASK.release_time, start_time) + TASK.process_time;
 
       // run the new step of bratley algorithm
-      skip_parents = bratleyAlgorithm(tasks, order, end_time, depth + 1,
-                                      best_time, best_order);
+      skip_parents =
+          bratleyAlgorithm(tasks, order, end_time, depth + 1, best_time);
 
       // swap back
       taskSwap(tasks[i], tasks[depth]);
@@ -156,8 +158,7 @@ int main(int argc, char **argv)
       vector<Task> tasks;
       vector<int> order(task_count);
       tasks.reserve(task_count);
-      int best_time = UINT32_MAX;
-      vector<int> best_order;
+      int best_time = INT_MAX;
 
       // Open the output file
       ofstream outputFile(argv[2]);
@@ -185,11 +186,11 @@ int main(int argc, char **argv)
       // Sort tasks based on release times
       sort(tasks.begin(), tasks.end(), compareTasks);
 
-      bratleyAlgorithm(tasks, order, 0, 0, best_time, best_order);
+      bratleyAlgorithm(tasks, order, 0, 0, best_time);
       if (!best_order.empty()) {
-         for (auto &task : order)
+         for (auto &task : best_order)
             outputFile << task << endl;
-         for (auto &task : order)
+         for (auto &task : best_order)
             cout << task << endl;
       } else {
          outputFile << "-1" << endl;
