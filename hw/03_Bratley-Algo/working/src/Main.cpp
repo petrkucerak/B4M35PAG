@@ -187,11 +187,11 @@ int main(int argc, char **argv)
       if (!best_order.empty()) {
          for (auto &task : best_order)
             outputFile << task << endl;
-         for (auto &task : best_order)
-            cout << task << endl;
+         // for (auto &task : best_order)
+         //    cout << task << endl;
       } else {
          outputFile << "-1" << endl;
-         cout << "-1" << endl;
+         // cout << "-1" << endl;
       }
    }
 END:
