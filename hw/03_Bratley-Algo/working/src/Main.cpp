@@ -116,7 +116,7 @@ bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
    bool is_best_tmp = false;
    for (int i = depth; i < tasks.size(); ++i) {
       // swap
-      taskSwap(tasks[depth], tasks[i]);
+      swap(tasks[depth], tasks[i]);
 
       order[TASK.task_id] = start_time;
 
@@ -129,7 +129,7 @@ bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
           bratleyAlgorithm(tasks, order, end_time, depth + 1, best_time);
 
       // swap back
-      taskSwap(tasks[i], tasks[depth]);
+      swap(tasks[i], tasks[depth]);
       if (skip_parents) {
          return skip_parents;
       }
