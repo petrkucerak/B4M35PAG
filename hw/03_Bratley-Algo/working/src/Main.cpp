@@ -78,36 +78,40 @@ bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
    // 2. CONDITION: Bound on the solution
    int count_process_time = 0;
    int sooner_release_time = 0;
-   int best_release_Time = 0;
+   int best_release_time = 0;
    int peters_magic = 0;
    int history_sum = 0;
+
    for (int i = depth; i < tasks.size(); ++i) {
       peters_magic += tasks[i].process_time;
+
       if (tasks[i].release_time > start_time) {
          peters_magic +=
-             (tasks[i].release_time - start_time - count_process_time);
+             tasks[i].release_time - start_time - count_process_time;
       } else {
          history_sum += tasks[i].process_time;
       }
+
       count_process_time += tasks[i].process_time;
-      sooner_release_time = tasks[i].release_time < sooner_release_time
-                                ? tasks[i].release_time
-                                : sooner_release_time;
-      best_release_Time = tasks[i].release_time > best_release_Time
-                              ? tasks[i].release_time
-                              : best_release_Time;
+      sooner_release_time = min(sooner_release_time, tasks[i].release_time);
+      best_release_time = max(best_release_time, tasks[i].release_time);
    }
-   if (max(start_time, sooner_release_time) + count_process_time >= best_time)
-      return skip_parents;
 
-   // 3. CONDITION: Decomposition
-   if (sooner_release_time >= start_time)
+   int current_time = max(start_time, sooner_release_time);
+   if (current_time + count_process_time >= best_time) {
+      return skip_parents;
+   }
+
+   // CONDITION: Decomposition
+   if (sooner_release_time >= start_time) {
       skip_parents = true;
+   }
 
-   // peter's smart heuristic
-   if ((history_sum < best_release_Time - start_time) &&
-       start_time + peters_magic >= best_time)
+   // Peter's smart heuristic
+   if (history_sum < best_release_time - start_time &&
+       start_time + peters_magic >= best_time) {
       return skip_parents;
+   }
 
    bool is_best_tmp = false;
    for (int i = depth; i < tasks.size(); ++i) {
