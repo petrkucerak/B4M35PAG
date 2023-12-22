@@ -118,11 +118,11 @@ bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
       // swap
       taskSwap(tasks[depth], tasks[i]);
 
-      order[depth] = TASK.task_id;
-
       // get end time
       const int end_time =
           max(TASK.release_time, start_time) + TASK.process_time;
+
+      order[TASK.task_id] = end_time;
 
       // run the new step of bratley algorithm
       skip_parents =
