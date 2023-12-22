@@ -16,8 +16,6 @@ struct Task {
    int deadline;
 };
 
-vector<int> best_order;
-
 bool compareTasks(const Task &task1, const Task &task2)
 {
    // First, compare by deadline
@@ -29,13 +27,6 @@ bool compareTasks(const Task &task1, const Task &task2)
       // If deadline is the same, compare by release_time
       return task1.release_time < task2.release_time;
    }
-}
-
-void taskSwap(Task &a, Task &b)
-{
-   Task temp = a;
-   a = b;
-   b = temp;
 }
 
 bool catchDeadline(vector<Task> tasks, int start_time, int depth)
@@ -59,7 +50,7 @@ bool isReleaseLater(vector<Task> &tasks, int start_time, int depth)
 }
 
 bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
-                      int depth, int &best_time)
+                      int depth, int &best_time, vector<int> &best_order)
 {
    bool skip_parents = false;
    if (depth == tasks.size()) {
@@ -125,8 +116,8 @@ bool bratleyAlgorithm(vector<Task> &tasks, vector<int> &order, int start_time,
           max(TASK.release_time, start_time) + TASK.process_time;
 
       // run the new step of bratley algorithm
-      skip_parents =
-          bratleyAlgorithm(tasks, order, end_time, depth + 1, best_time);
+      skip_parents = bratleyAlgorithm(tasks, order, end_time, depth + 1,
+                                      best_time, best_order);
 
       // swap back
       swap(tasks[i], tasks[depth]);
@@ -190,7 +181,9 @@ int main(int argc, char **argv)
       // Sort tasks based on release times
       sort(tasks.begin(), tasks.end(), compareTasks);
 
-      bratleyAlgorithm(tasks, order, 0, 0, best_time);
+      vector<int> best_order;
+
+      bratleyAlgorithm(tasks, order, 0, 0, best_time, best_order);
       if (!best_order.empty()) {
          for (auto &task : best_order)
             outputFile << task << endl;
