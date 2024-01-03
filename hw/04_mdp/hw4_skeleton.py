@@ -17,7 +17,7 @@ GO_DOWN = 2
 GO_LEFT = 3
 WALL = 5
 GOAL = 6
-CONVERGENCE_DELTA = 0.01
+CONVERGENCE_DELTA = 0.005
  
 def plot_policy(policy):
     '''
@@ -80,52 +80,64 @@ def main(instance_path, solution_path):
             for c in range(width): # col
                 if policy[r][c] == WALL or policy[r][c] == GOAL: continue
                 straight = 0.8
+                turn_back = 0.01
                 turn_left = turn_right = 0.1
                 best_direction = 0
                 if policy[r][c] == GO_DOWN:
                     straight *= values[r+1][c]
                     turn_left *= values[r][c+1]
                     turn_right *= values[r][c-1]
-                    best_direction = max(turn_left, turn_right, straight)
+                    turn_back *= values[r-1][c]
+                    best_direction = max(turn_left, turn_right, straight, turn_back)
                     if turn_left == best_direction: policy[r][c] = GO_RIGHT
                     elif turn_right == best_direction: policy[r][c] = GO_LEFT
+                    elif turn_back == best_direction: policy[r][c] = GO_UP
                     
                 elif policy[r][c] == GO_RIGHT:
                     straight *= values[r][c+1]
                     turn_left *= values[r-1][c]
                     turn_right *= values[r+1][c]
-                    best_direction = max(turn_left, turn_right, straight)
+                    turn_back *= values[r][c-1]
+                    best_direction = max(turn_left, turn_right, straight, turn_back)
                     if turn_left == best_direction: policy[r][c] = GO_UP
                     elif turn_right == best_direction: policy[r][c] = GO_DOWN
+                    elif turn_back == best_direction: policy[r][c] = GO_LEFT
 
                 elif policy[r][c] == GO_UP:
                     straight *= values[r-1][c]
                     turn_left *= values[r][c-1]
                     turn_right *= values[r][c+1]
-                    best_direction = max(turn_left, turn_right, straight)
+                    turn_back *= values[r+1][c]
+                    best_direction = max(turn_left, turn_right, straight, turn_back)
                     if turn_left == best_direction: policy[r][c] = GO_LEFT
                     elif turn_right == best_direction: policy[r][c] = GO_RIGHT
+                    elif turn_back == best_direction: policy[r][c] = GO_DOWN
 
                 elif policy[r][c] == GO_LEFT:
                     straight *= values[r][c-1]
                     turn_left *= values[r+1][c]
                     turn_right *= values[r-1][c]
-                    best_direction = max(turn_left, turn_right, straight)
+                    turn_back *= values[r][c+1]
+                    best_direction = max(turn_left, turn_right, straight, turn_back)
                     if turn_left == best_direction: policy[r][c] = GO_DOWN
                     elif turn_right == best_direction: policy[r][c] = GO_UP
-
+                    elif turn_back == best_direction: policy[r][c] = GO_RIGHT
+                
                 values_2[r][c] = values[r][c] + (CONVERGENCE_DELTA * best_direction)
-                # if values_2[r][c] != values[r][c]:
-                if iteration != 1000:
+                if values_2[r][c] != values[r][c]:
+                # if iteration != 1000:
                     is_polic_changed = True
-                    print(values_2[r][c], values[r][c])
+                    # print(values_2[r][c], values[r][c])
         # copy values_2 to values
-        values = values_2[:]
+        for r in range(height): # row
+            for c in range(width): # col
+                values[r][c] = values_2[r][c]
                     
 
     final_policy = policy
     print("Count of iterations:", iteration)
     plot_policy(policy)
+    print(values)
     
     # Save results
     with open(f'{solution_path}', 'w') as file:
@@ -134,6 +146,11 @@ def main(instance_path, solution_path):
             file.write('\n')
      
 if __name__ == "__main__":
-    instance_path = sys.argv[1]
-    solution_path = sys.argv[2]
+    if len(sys.argv) > 1:
+        instance_path = sys.argv[1]
+        solution_path = sys.argv[2]
+    else:
+        print("Debug mode")
+        instance_path = "instances/public_1.txt"
+        solution_path = "out.txt"
     main(instance_path,solution_path)
