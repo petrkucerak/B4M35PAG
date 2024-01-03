@@ -18,7 +18,8 @@ GO_DOWN = 2
 GO_LEFT = 3
 WALL = 5
 GOAL = 6
-CONVERGENCE_DELTA = 0.005
+CONVERGENCE_DELTA = .9
+REWARD = 10
 
 class MDPState:
     """State class for a given space in gridworld, with directional attributes pointing to other squares.
@@ -107,11 +108,11 @@ def maze_to_mdp(maze, goals):
             
     while not goals.empty():
         i, j = goals.get()
-        grid[i][j].reward = 10
+        grid[i][j].reward = REWARD
             
     return(grid)
 
-def policy_iteration(grid, gamma):
+def policy_iteration(grid):
     """
     Performs policy iteration on a given grid of MDPState objects.
     inspiration in: https://github.com/sally-gao/mazemdp/tree/master
@@ -139,7 +140,7 @@ def policy_iteration(grid, gamma):
                         policy[i][j] = '#'
                     else:
                         neighbor = getattr(grid[i][j], policy[i][j])
-                        v = grid[i][j].reward + gamma * grid[neighbor[0]][neighbor[1]].value
+                        v = grid[i][j].reward + CONVERGENCE_DELTA * grid[neighbor[0]][neighbor[1]].value
                         # Compare to previous iteration
                         if v != grid[i][j].value:
                             is_value_changed = True
@@ -166,12 +167,12 @@ def main(instance_path, solution_path):
     # Read instance and prepare policies and values
     maze, goals = init(instance_path)
     grid = maze_to_mdp(maze, goals)
-    final_policy = policy_iteration(grid, .9)
+    final_policy = policy_iteration(grid)
 
     for r in range(len(grid)):
         for c in range(len(grid[r])):
             if final_policy[r][c] == '#': final_policy[r][c] = WALL
-            elif grid[r][c].reward == 10: final_policy[r][c] = GOAL
+            elif grid[r][c].reward == REWARD: final_policy[r][c] = GOAL
             elif final_policy[r][c] == 'up': final_policy[r][c] = GO_UP
             elif final_policy[r][c] == 'left': final_policy[r][c] = GO_LEFT
             elif final_policy[r][c] == 'right': final_policy[r][c] = GO_RIGHT
