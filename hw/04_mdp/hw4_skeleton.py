@@ -114,6 +114,7 @@ def maze_to_mdp(maze, goals):
 def policy_iteration(grid, gamma):
     """
     Performs policy iteration on a given grid of MDPState objects.
+    inspiration in: https://github.com/sally-gao/mazemdp/tree/master
     """
     
     is_policy_changed = True
