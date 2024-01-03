@@ -71,14 +71,14 @@ def main(instance_path, solution_path):
     width = values.shape[0]
     height = values.shape[1]
 
-
+    iteration = 0
     while is_polic_changed:
         is_polic_changed = False
-        plot_policy(policy)
-        
+        # plot_policy(policy)
+        iteration += 1
         for r in range(height): # row
             for c in range(width): # col
-                if policy[r][c] == WALL: continue
+                if policy[r][c] == WALL or policy[r][c] == GOAL: continue
                 straight = 0.8
                 turn_left = turn_right = 0.1
                 best_direction = 0
@@ -115,14 +115,16 @@ def main(instance_path, solution_path):
                     elif turn_right == best_direction: policy[r][c] = GO_UP
 
                 values_2[r][c] = values[r][c] + (CONVERGENCE_DELTA * best_direction)
-                if values_2[r][c] != values[r][c]: is_polic_changed = True
+                # if values_2[r][c] != values[r][c]:
+                if iteration != 1000:
+                    is_polic_changed = True
+                    print(values_2[r][c], values[r][c])
         # copy values_2 to values
-        values = values_2
-                
-
+        values = values_2[:]
                     
 
     final_policy = policy
+    print("Count of iterations:", iteration)
     plot_policy(policy)
     
     # Save results
