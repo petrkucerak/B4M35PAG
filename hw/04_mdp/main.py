@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import numpy as np
 import matplotlib.pyplot as plt
-from numba import cuda
+from numba import cuda, prange
 from matplotlib.colors import ListedColormap
 from copy import deepcopy
 from cmath import sqrt
@@ -15,7 +15,7 @@ GO_DOWN = 2
 GO_LEFT = 3
 WALL = 5
 GOAL = 6
-CONVERGENCE_DELTA = .3
+CONVERGENCE_DELTA = .9
 REWARD = 10
 
 class MDPState:
@@ -67,14 +67,15 @@ def init(filename):
                 goals.put([r,c])
     return grid, goals
 
+@njit(parallel=True)
 def maze_to_mdp(maze, goals):
     
     """Returns a matrix of MDPState objects for each free space in a maze"""
     
     grid = deepcopy(maze)
 
-    for i in range(1, len(maze) - 1):
-        for j in range(1, len(maze[i]) - 1):
+    for i in prange(1, len(maze) - 1):
+        for j in prange(1, len(maze[i]) - 1):
             
             #represent walls as #
             if maze[i][j] == '#':
@@ -109,6 +110,7 @@ def maze_to_mdp(maze, goals):
             
     return(grid)
 
+@njit(parallel=True)
 def policy_iteration(grid):
     """
     Performs policy iteration on a given grid of MDPState objects.
@@ -131,8 +133,8 @@ def policy_iteration(grid):
         while is_value_changed:
             is_value_changed = False
             # Run value iteration for each state
-            for i in range(len(grid)):
-                for j in range(len(grid[i])):
+            for i in prange(len(grid)):
+                for j in prange(len(grid[i])):
                     if grid[i][j] == '#':
                         policy[i][j] = '#'
                     else:
@@ -144,8 +146,8 @@ def policy_iteration(grid):
                             grid[i][j].value = v
                                 
         # Once values have converged for the policy, update policy with greedy actions
-        for i in range(len(grid)):
-            for j in range(len(grid[i])):
+        for i in prange(len(grid)):
+            for j in prange(len(grid[i])):
                 if grid[i][j] != '#':
                     # Dictionary comprehension to get value associated with each action
                     action_values = {a: grid[getattr(grid[i][j], a)[0]][getattr(grid[i][j], a)[1]].value for a in actions}
@@ -166,8 +168,8 @@ def main(instance_path, solution_path):
     grid = maze_to_mdp(maze, goals)
     final_policy = policy_iteration(grid)
 
-    for r in range(len(grid)):
-        for c in range(len(grid[r])):
+    for r in prange(len(grid)):
+        for c in prange(len(grid[r])):
             if final_policy[r][c] == '#': final_policy[r][c] = WALL
             elif grid[r][c].reward == REWARD: final_policy[r][c] = GOAL
             elif final_policy[r][c] == 'up': final_policy[r][c] = GO_UP
