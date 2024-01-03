@@ -15,7 +15,7 @@ GO_DOWN = 2
 GO_LEFT = 3
 WALL = 5
 GOAL = 6
-CONVERGENCE_DELTA = .9
+CONVERGENCE_DELTA = .3
 REWARD = 10
 
 class MDPState:
@@ -177,6 +177,8 @@ def main(instance_path, solution_path):
 
 
     # Todo : Implement policy itteration on CUDA using numba library
+            
+    # plot_policy(final_policy)
 
     # Save results
     with open(f'{solution_path}', 'w') as file:
