@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-import math
-import time
 import numpy as np
 import matplotlib.pyplot as plt
 from numba import cuda
 from matplotlib.colors import ListedColormap
-from random import shuffle, randrange, randint
 from copy import deepcopy
 from cmath import sqrt
 import queue
