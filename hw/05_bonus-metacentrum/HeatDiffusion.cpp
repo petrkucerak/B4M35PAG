@@ -2,6 +2,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <omp.h>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -132,8 +133,11 @@ int main(int argc, char **argv)
       GET_MASK(i.mX, i.mY) = PERMANENT;
    }
 
+   high_resolution_clock::time_point mid = high_resolution_clock::now();
+
    do {
       achieved_accuracy = true;
+      // #pragma omp parallel for shared(tmp_map, map, mask)
       for (unsigned int i = 0; i < map.size(); ++i) {
          if (mask[i] != PERMANENT) {
             switch (mask[i]) {
@@ -187,10 +191,17 @@ int main(int argc, char **argv)
                break;
             }
 
-            if (achieved_accuracy && abs(map[i] - tmp_map[i]) <= ACCURACY)
-               achieved_accuracy = true;
-            else
-               achieved_accuracy = false;
+            if (achieved_accuracy && abs(map[i] - tmp_map[i]) <= ACCURACY) {
+               // #pragma omp critical
+               {
+                  achieved_accuracy = true;
+               }
+            } else {
+               // #pragma omp critical
+               {
+                  achieved_accuracy = false;
+               }
+            }
          } else { // permanent spots
             tmp_map[i] = map[i];
          }
@@ -203,10 +214,14 @@ int main(int argc, char **argv)
 
    //-----------------------\\
 
-   double totalDuration =
-       duration_cast<duration<double>>(high_resolution_clock::now() - start)
-           .count();
-   cout << "computational time: " << totalDuration << " s" << endl;
+   high_resolution_clock::time_point end = high_resolution_clock::now();
+
+   double totalDuration = duration_cast<duration<double>>(end - start).count();
+   double loadDuration = duration_cast<duration<double>>(mid - start).count();
+   double computeDuration = duration_cast<duration<double>>(end - mid).count();
+   cout << "computational time: " << totalDuration
+        << " s | preconfig (load): " << loadDuration
+        << " s | compute: " << computeDuration << " s" << endl;
 
    string outputFileName(argv[2]);
    writeOutput(width, height, outputFileName, map);
