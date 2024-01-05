@@ -67,7 +67,7 @@ def init(filename):
                 goals.put([r,c])
     return grid, goals
 
-@njit(parallel=True)
+@cuda.jit(parallel=True)
 def maze_to_mdp(maze, goals):
     
     """Returns a matrix of MDPState objects for each free space in a maze"""
@@ -110,7 +110,7 @@ def maze_to_mdp(maze, goals):
             
     return(grid)
 
-@njit(parallel=True)
+@cuda.jit(parallel=True)
 def policy_iteration(grid):
     """
     Performs policy iteration on a given grid of MDPState objects.
