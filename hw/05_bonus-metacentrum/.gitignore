@@ -1,2 +1,7 @@
 *.zip
-Main
+MainStorage
+InstanceGenerator
+instance.bin
+output.bin
+kucerp28.zip
+Storage
