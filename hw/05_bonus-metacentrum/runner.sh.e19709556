@@ -1,0 +1,9 @@
+Storage.cpp:51: warning: ignoring '#pragma omp parallel' [-Wunknown-pragmas]
+   51 | #pragma omp parallel for /*collapse(2)*/ shared(graph, records)
+      | 
+Storage.cpp:100: warning: ignoring '#pragma omp parallel' [-Wunknown-pragmas]
+  100 | #pragma omp parallel for simd
+      | 
+Storage.cpp:127: warning: ignoring '#pragma omp parallel' [-Wunknown-pragmas]
+  127 | #pragma omp parallel for simd reduction(+ : treeCost)
+      | 
