@@ -1,0 +1,6 @@
+11038
+Distance time: 440106, MST time: 149
+
+real	0m0.442s
+user	0m0.442s
+sys	0m0.000s

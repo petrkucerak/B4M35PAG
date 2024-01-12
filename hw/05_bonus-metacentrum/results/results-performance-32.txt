@@ -1,0 +1,6 @@
+67094
+Distance time: 13850781, MST time: 829
+
+real	0m13.854s
+user	0m13.854s
+sys	0m0.000s
